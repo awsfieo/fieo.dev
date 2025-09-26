@@ -1,0 +1,23 @@
+﻿Director General & CEO,Director General & CEO,DG & CEO,1,1,TRUE,TRUE
+Addl. Director General,Additional Director General,Addl DG,2,2,TRUE,TRUE
+Jt. Director General,Joint Director General,Jt DG,3,3,TRUE,TRUE
+DDG,Deputy Director General,DDG,4,4,TRUE,TRUE
+Jt. DDG,Joint Deputy Director General,Jt DDG,5,5,TRUE,TRUE
+Advisor,Advisor,Advisor,6,6,TRUE,TRUE
+Director,Director,Director,7,7,TRUE,TRUE
+Jt. Director,Joint Director General,JD,8,8,TRUE,TRUE
+Dy. Director,Deputy Director,DD,9,9,TRUE,TRUE
+Asst. Director,Assistant Director,AD,10,10,TRUE,TRUE
+Mgmt. Exect.,Management Executive,ME,11,11,FALSE,TRUE
+Coordinator,Coordinator,,12,12,FALSE,TRUE
+Mgmt. Trainee,Management Trainee,MT,13,13,FALSE,TRUE
+Exect. Asst.,Executive Assistant,,14,14,FALSE,TRUE
+Jr. Exect. Asst.,Junior Executive Assistant,,15,15,FALSE,TRUE
+Jr. Asst.,Junior Assistant,,16,16,FALSE,TRUE
+Sr. Record Keeper,Senior Record Keeper,,17,17,FALSE,TRUE
+Sr. Front Office Asst.,Senior Front Office Assistant,,18,18,FALSE,TRUE
+Front Office Asst,Front Office Assistant,,19,19,FALSE,TRUE
+DMO,Duplicate Machine Operator,DMO,20,20,FALSE,TRUE
+Driver,Driver,,21,21,FALSE,TRUE
+Messenger,Messenger,,22,22,FALSE,TRUE
+Messenger cum Peon,Messenger cum Peon,,23,23,FALSE,TRUE

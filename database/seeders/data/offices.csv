@@ -1,0 +1,18 @@
+office,address,city,state,pin,email,phone,fax,country,latitude,longitude,sort_id,parent_id,is_active
+HEAD OFFICE,"Niryat Bhawan, Rao Tula Ram Marg, Opp. Army Hospital Research & Referral, New Delhi -110 057",New Delhi,Delhi,110057,fieo@fieo.org,"+91-11-46042222, 26150101-04",+91-11-26148194,India,,,1,,True
+NORTHERN REGION,"Niryat Bhawan, Rao Tula Ram Marg, Opp. Army Hospital Research & Referral, New Delhi -110 057",New Delhi,Delhi,110057,fieonr@fieo.org,"+91-11-46042222, 26150101-04",+91-11-26148194,India,,,2,,True
+Uttar Pradesh Chapter,"14/76 Civil Lines, Kanpur - 208 001",Kanpur,Uttar Pradesh,208001,fieokanpur@fieo.org,+91-512-2534824,,India,,,3,,True
+Rajasthan Chapter,"303, 3rd Floor, Suryodaya Apartments, F-72, Subhash Marg, C-Scheme, Jaipur - 302 001",Jaipur,Rajasthan,302001,rajasthan@fieo.org,+91-141-4055591,+91-141-4055591,India,,,4,,True
+Punjab Chapter : Ludhiana,"SCO 17, 2nd Floor, Sector 39, Chandigarh Road, Ludhiana-141 010",Ludhiana,Punjab,141010,punjab@fieo.org,+91-161-5003600,+91-161-5003600,India,,,5,,True
+EASTERN REGION,"11/1 Sarat Bose Road, Ideal plaza, Unit S/307 & S/309, 3rd Floor, South Block, Kolkata- 700020",Kolkata,West Bengal,700020,fieoer@fieo.org,"+91-33-35084690, 033-35499604, 033-35499604",,India,,,6,,True
+Odisha Chapter,"Raptani Bhawan, BDA Commercial Complex, Near Indradhanu Market, IRC Village, Nayapalli, Bhubaneswar - 751015",Bhubaneswar,Odisha,751015,fieobbsr@fieo.org,+91-674-2556674,+91-674-2553510,India,,,7,,True
+North East Chapter,"First Floor, H. No. 23, N N Tower, Dr S K Bhuyan Road, Dighali Pukhuri (East), Guwahati - 781 001",Guwahati,Assam,781001,fieonortheast@fieo.org,+91-361-2739888,,India,,,8,,True
+WESTERN REGION,"TIMES SQUARE, Unit No.3A, B-Wing, 4th Floor, Andheri Kurla Road, Andheri (East), Mumbai-400059",Mumbai,Maharashtra,400059,fieowr@fieo.org,+91-22-40572222,+91-22-28392334,India,,,9,,True
+Gujarat Chapter,"C-701 / C-702, The First, Behind Keshavbaug Party Plot and ITC Narmada Hotel, Shivranjani Cross Rd, Vastrapur, Ahmedabad – 380 015",,Gujarat,,fieoahd@fieo.org,+91-79-29700368,+91-79-40050406,India,,,10,,True
+Madhya Pradesh Chapter,"203, Gold Arcade, 3/1, New Palasia, Near Janjirwala Square, Indore – 452 001",,Madhya Pradesh,,indore@fieo.org,"+91-731-4282335, 336",+91-731-4282337,India,,,11,,True
+SOUTHERN REGION,"Spencer Plaza, Unit No.706, 7th Floor, 769, Anna Salai, Chennai-600 002",Chennai,Tamil Nadu,600002,fieosr@fieo.org,"+91-44-28497766, 28497755",+91-44-28496666,India,,,12,,True
+Karnataka Chapter,"Jain Heights (Solus), Unit C-06, 6th Floor, No.2, 1st Cross, J C Road (Opposite Poornima Theatre), Bengaluru-560 002",Bengaluru,Karnataka,560002,fieoblr@fieo.org,"+91-80-22212266, 4854, 4855",,India,,,13,,True
+Telengana Chapter,"Shakar Bhavan, 3rd Floor, #5-10-174, Fateh Maidan Road, Basheerbagh, Hyderabad - 500 004",Hyderabad,Telangana,500004,fieohyd@fieo.org,+91-40-23210380,+91-40-23210381,India,,,14,,True
+Kerala Chapter,"Marine Building, First Floor, Malabar Road, North End, Willingdon Island, Kochi - 682009",Kochi,Kerala,682009,kerala@fieo.org,+91-484-2666116,,India,,,15,,True
+Coimbatore Chapter,"KPM Centre,  2nd Floor, No. 2A, GKNM Hospital Signal, P N Palayam, Coimbatore - 641 037",Coimbatore,Tamil Nadu,641037,fieokovai@fieo.org,"+91-422-2220414, 4364308",+91-422-2220414,India,,,16,,True
+Andhra Pradesh Chapter,"PVS Landmark, Ground Floor, APTPC, Plot No.11&12 , Industrial Park, Mangalagiri, Guntur District, Andhra Pradesh - 522503",Andhra Pradesh,Andhra Pradesh,522503,fieoap@fieo.org,+91-9010717919,,India,,,17,,True
