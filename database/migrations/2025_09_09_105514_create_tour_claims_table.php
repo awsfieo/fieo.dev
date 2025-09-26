@@ -51,7 +51,6 @@ return new class extends Migration
             $table->dateTimeTz('closed_at')->nullable();
 
             $table->timestampsTz();
-            $table->softDeletesTz();
 
             $table->index(['employee_id', 'submitted_at']);
         });

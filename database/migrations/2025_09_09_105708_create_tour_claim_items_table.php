@@ -39,7 +39,6 @@ return new class extends Migration
             $table->json('payload_json')->nullable();
 
             $table->timestampsTz();
-            $table->softDeletesTz();
 
             $table->index(['tour_claim_id', 'line_type']);
         });

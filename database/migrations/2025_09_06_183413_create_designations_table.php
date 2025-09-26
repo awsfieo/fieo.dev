@@ -18,7 +18,6 @@ return new class extends Migration
             $table->boolean('is_officer')->default(true);
             $table->boolean('is_active')->default(true);
             $table->timestampsTz();
-            $table->softDeletesTz(); // deleted_at
 
             // indexes
             $table->index('is_active');

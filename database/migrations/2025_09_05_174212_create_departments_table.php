@@ -22,7 +22,6 @@ return new class extends Migration
             $table->unsignedBigInteger('office_id')->nullable(); // will reference offices later
             $table->boolean('is_active')->default(true);
             $table->timestampsTz();
-             $table->softDeletesTz(); // deleted_at
 
             // indexes
             $table->index('is_active');
