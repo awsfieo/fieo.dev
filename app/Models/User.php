@@ -16,6 +16,8 @@ class User extends Authenticatable implements FilamentUser
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, TwoFactorAuthenticatable, HasRoles;
 
+    protected $guard_name = 'web';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -50,12 +52,22 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
-    public function canAccessPanel(Panel $panel): bool
-    {
-        if ($panel->getId() === 'admin') {
-            return $this->email === 'admin@fieo.org' && $this->hasVerifiedEmail();
-        }
+    // Access to filament panels
 
-        return true; // allow all other panels
+    public function canAccessPanel(\Filament\Panel $panel): bool
+    {
+        return match ($panel->getId()) {
+            'admin' =>
+            $this->hasVerifiedEmail()
+                && $this->hasRole('Super Admin')
+                && $this->email === 'admin@fieo.org', // or: str_ends_with($this->email, '@fieo.org')
+
+            'employee' =>
+            $this->hasVerifiedEmail()
+                && $this->hasRole('Employee')
+                && str_ends_with($this->email, '@fieo.org'),
+
+            default => false,
+        };
     }
 }
