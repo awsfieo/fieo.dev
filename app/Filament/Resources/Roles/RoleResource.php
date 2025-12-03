@@ -16,6 +16,8 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use App\Filament\Resources\Roles\RelationManagers\UsersRelationManager;
+
 
 class RoleResource extends Resource
 {
@@ -42,10 +44,15 @@ class RoleResource extends Resource
         return RolesTable::configure($table);
     }
 
+    // 2. Update the getRelations method
     public static function getRelations(): array
     {
         return [
-            //
+            // Keep your existing permissions manager if it's there
+            RelationManagers\PermissionsRelationManager::class,
+
+            // Add the new Users manager
+            UsersRelationManager::class,
         ];
     }
 

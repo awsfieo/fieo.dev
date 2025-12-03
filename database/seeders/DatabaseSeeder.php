@@ -302,6 +302,7 @@ class DatabaseSeeder extends Seeder
         $iOfficeId    = $findIndex(['office_id', 'office']);
         $iIsActive    = $findIndex(['is_active', 'active', 'status']);
         $iType    = $findIndex(['type', 'office_type']);
+        $iRegion  = $findIndex(['region']); // <--- Added finding 'region' column
         $iGstin   = $findIndex(['gstin', 'gst', 'gst_no']);
 
         $created = 0;
@@ -322,9 +323,11 @@ class DatabaseSeeder extends Seeder
             $officeIdRaw = $iOfficeId    !== false ? ($r[$iOfficeId]    ?? null) : null;
             $isActiveRaw = $iIsActive    !== false ? ($r[$iIsActive]    ?? null) : null;
             $typeRaw  = $iType  !== false ? ($r[$iType]  ?? null) : null;
+            $regionRaw = $iRegion !== false ? ($r[$iRegion] ?? null) : null; // <--- Added extraction
             $gstinRaw = $iGstin !== false ? ($r[$iGstin] ?? null) : null;
 
             $type  = $typeRaw  !== null ? trim((string) $typeRaw)  : null;
+            $region = $regionRaw !== null ? trim((string) $regionRaw) : null; // <--- Added processing
             $gstin = $gstinRaw !== null ? trim((string) $gstinRaw) : null;
 
 
@@ -339,6 +342,7 @@ class DatabaseSeeder extends Seeder
                 'long_title' => $longTitle !== '' ? $longTitle : null,
                 'short_title' => $shortTitle !== '' ? $shortTitle : null,
                 'type'      => $type,
+                'region'    => $region, // <--- Added to payload
                 'gstin'     => $gstin,
                 'sort_id'     => $sortId,
                 'parent_id'   => $parentId,
