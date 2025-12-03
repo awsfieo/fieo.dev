@@ -29,7 +29,7 @@ return new class extends Migration
 
             // Event linkage and flags
             $table->boolean('is_event_based')->default(false)->index();
-            $table->foreignId('event_id')->nullable()->constrained('events'); 
+            $table->foreignId('event_id')->nullable()->constrained('events');
 
             // Header fields
             $table->text('purpose_of_tour');
@@ -53,16 +53,20 @@ return new class extends Migration
             $table->json('payload_json')->nullable();
 
             // --- Workflow Fields (Updated) ---
-            $table->string('current_state', 32)->default('draft')->index(); 
-            
+            $table->string('current_state', 32)->default('draft')->index();
+
             // Tracks who currently has the ball.
-            $table->foreignId('pending_with')->nullable()->constrained('employees'); 
-            
+            $table->string('pending_with', 64)->nullable();
+            $table->foreign('pending_with')
+                ->references('employee_code')
+                ->on('employees')
+                ->nullOnDelete();
+
             // Current active remarks (for quick access)
-            $table->text('remarks')->nullable(); 
-            
+            $table->text('remarks')->nullable();
+
             // Full audit trail: [{datetime, action, from, to, remarks, attachments}, ...]
-            $table->json('file_history')->nullable(); 
+            $table->json('file_history')->nullable();
 
             $table->dateTimeTz('submitted_at')->nullable();
             $table->dateTimeTz('closed_at')->nullable();

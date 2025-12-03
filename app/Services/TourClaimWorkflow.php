@@ -160,25 +160,33 @@ class TourClaimWorkflow
         return null;
     }
 
-    private function updateState($claim, $state, $pendingWith, $remarks)
+    private function updateState($claim, $state, $pendingWithEmployee, $remarks)
     {
         $claim->update([
             'current_state' => $state,
-            'pending_with'  => $pendingWith?->id,
+            // SAVE CODE, NOT ID
+            'pending_with'  => $pendingWithEmployee?->employee_code, 
             'remarks'       => $remarks,
-            'file_history'  => $this->appendHistory($claim, ucfirst($state), $remarks, Auth::user()->employee, $pendingWith?->id)
+            'file_history'  => $this->appendHistory(
+                $claim, 
+                ucfirst($state), 
+                $remarks, 
+                Auth::user()->employee, 
+                $pendingWithEmployee?->employee_code // Store code in history too
+            )
         ]);
     }
 
-    private function appendHistory($claim, $action, $remarks, $actor, $toId = null): array
+    private function appendHistory($claim, $action, $remarks, $actor, $toCode = null): array
     {
         $history = $claim->file_history ?? [];
         $history[] = [
             'timestamp'  => now()->toDateTimeString(),
             'action'     => $action,
             'actor_name' => $actor?->name,
+            'actor_code' => $actor?->employee_code, // Good for audit
             'remarks'    => $remarks,
-            'to_id'      => $toId
+            'to_code'    => $toCode // Track who it went to
         ];
         return $history;
     }

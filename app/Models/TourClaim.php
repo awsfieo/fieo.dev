@@ -94,13 +94,15 @@ class TourClaim extends Model
     // Relationship to the person holding the claim
     public function pendingWith(): BelongsTo
     {
-        return $this->belongsTo(Employee::class, 'pending_with');
+        // links 'pending_with' on this table to 'employee_code' on employees table
+        return $this->belongsTo(Employee::class, 'pending_with', 'employee_code');
     }
 
     // Helper to check access
     public function canBeActionedBy(User $user): bool
     {
-        return $this->pending_with === $user->employee?->id;
+        // Compare string codes instead of integer IDs
+        return $this->pending_with === $user->employee?->employee_code;
     }
 
     public function items(): HasMany
