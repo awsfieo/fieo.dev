@@ -1,0 +1,80 @@
+<?php
+
+namespace App\Models;
+
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Fortify\TwoFactorAuthenticatable;
+use Spatie\Permission\Traits\HasRoles;
+use Filament\Panel;
+use Filament\Models\Contracts\FilamentUser;
+use App\Models\Employee;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
+class User extends Authenticatable implements FilamentUser
+{
+    /** @use HasFactory<\Database\Factories\UserFactory> */
+    use HasFactory, Notifiable, TwoFactorAuthenticatable, HasRoles;
+
+    protected $guard_name = 'web';
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
+
+    // Access to filament panels
+
+    public function canAccessPanel(\Filament\Panel $panel): bool
+    {
+        return match ($panel->getId()) {
+            'admin' =>
+            $this->hasVerifiedEmail()
+                && $this->hasRole('Super Admin')
+                && $this->email === 'admin@fieo.org', // or: str_ends_with($this->email, '@fieo.org')
+
+            'employee' =>
+            $this->hasVerifiedEmail()
+                && $this->hasRole('Employee')
+                && str_ends_with($this->email, '@fieo.org'),
+
+            default => false,
+        };
+    }
+
+    public function employee(): HasOne
+    {
+        return $this->hasOne(Employee::class, 'user_id'); // change 'user_id' if your FK is different
+    }
+}
