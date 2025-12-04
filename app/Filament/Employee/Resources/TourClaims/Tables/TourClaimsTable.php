@@ -28,8 +28,9 @@ class TourClaimsTable
                     ->sortable(),
 
                 // 3. Status
-                TextColumn::make('status')
+                TextColumn::make('current_state')
                     ->label('Status')
+                    ->badge()
                     ->sortable(),
             ])
             ->filters([
@@ -37,7 +38,9 @@ class TourClaimsTable
             ])
             ->recordActions([
                 ViewAction::make(),
-                EditAction::make(),
+                
+                EditAction::make()
+                    ->visible(fn ($record) => in_array($record->current_state, ['draft', 'query'])),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

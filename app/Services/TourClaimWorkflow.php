@@ -29,7 +29,7 @@ class TourClaimWorkflow
         $currentUser = Auth::user();
         
         // 1. Find next actor based on Current User's Role
-        $nextActor = $this->determineNextActor($claim, 'forward', $currentUser);
+        $nextActor = $this->determineNextActor($claim, 'Forward', $currentUser);
 
         // 2. If no one is next, it implies approval is needed (or end of chain)
         if (!$nextActor) {
@@ -37,7 +37,7 @@ class TourClaimWorkflow
             return;
         }
 
-        $this->updateState($claim, 'reviewed', $nextActor, $remarks);
+        $this->updateState($claim, 'Reviewed', $nextActor, $remarks);
     }
 
     public function approve(TourClaim $claim, string $remarks): void
@@ -51,41 +51,36 @@ class TourClaimWorkflow
         ]);
     }
 
-    public function reject(TourClaim $claim, string $reason): void
+    public function query(TourClaim $claim, string $reason): void
     {
         $claim->update([
-            'current_state' => 'draft',
+            'current_state' => 'query',
             'pending_with'  => null,
             'remarks'       => $reason,
-            'file_history'  => $this->appendHistory($claim, 'Rejected', $reason, Auth::user()->employee),
+            'file_history'  => $this->appendHistory($claim, 'Query', $reason, Auth::user()->employee),
         ]);
     }
 
     /**
      * THE LOGIC CORE
+     * CHANGED: Made public so the View can "peek" ahead.
      */
-    private function determineNextActor(TourClaim $claim, string $step, ?User $currentActor = null): ?Employee
+    public function determineNextActor(TourClaim $claim, string $step, ?User $currentActor = null): ?Employee
     {
         $employee = $claim->employee;
         $dept     = $employee->department;
-        $region   = $dept?->region ?? 'HO'; // 'WR', 'NR'...
-        $deptType = $dept?->type ?? 'HO';   // 'CO', 'RO'...
+        $region   = $dept?->region ?? 'HO'; 
+        $deptType = $dept?->type ?? 'HO';   
 
         // --- START OF CHAIN ---
         if ($step === 'start') {
-            // 1. Chapter Employees -> Chapter Head
             if ($deptType === 'CO') {
                 return $this->findGenericRoleInScope('Chapter Head', officeId: $employee->office_id);
             }
-            
-            // 2. Regional Office Employees -> Accounts Executive {Region}
             if ($deptType === 'RO') {
                 return $this->findGenericRoleInScope('Accounts Executive', region: $region);
             }
-
-            // 3. Head Office / Departments -> HOD
             if ($deptType === 'HO' || $deptType === 'DO') {
-                // If it's the Finance Dept itself, go straight to Executive
                 if (str_contains(strtolower($dept->department ?? ''), 'finance')) {
                     return $this->findSpecificRole('Accounts Executive HO');
                 }
@@ -94,8 +89,10 @@ class TourClaimWorkflow
         }
 
         // --- RELAY (FORWARDING) ---
-        // We look at the Current Actor's Roles to decide the next step
         $roles = $currentActor?->getRoleNames()->toArray() ?? [];
+        
+        // Common amount calculation for limits
+        $amount = ($claim->amount_reimburse_inr ?? 0) + ($claim->total_expenses_inr ?? 0);
 
         // 1. Chapter Head -> Accounts Executive {Region}
         if (in_array('Chapter Head', $roles)) {
@@ -109,19 +106,16 @@ class TourClaimWorkflow
 
         // 3. Accounts Executive (Region) -> Regional Head {Region}
         if (in_array('Accounts Executive', $roles)) {
-            // Note: If this user is 'Accounts Executive HO', skip this block (handled below)
             if (!in_array('Accounts Executive HO', $roles)) {
                 return $this->findGenericRoleInScope('Regional Head', region: $region);
             }
         }
 
-        // 4. Regional Head -> Accounts Executive HO
+        // 4. Regional Head -> Accounts Executive HO (With 50k Limit)
         if (in_array('Regional Head', $roles)) {
-            // Check Limits (Domestic <= 50k stops here)
-            // Note: Adjust '50000' logic if you want strict checking against total expense
-            $amount = ($claim->amount_reimburse_inr ?? 0) + ($claim->total_expenses_inr ?? 0);
+            // Logic: If Domestic & <= 50k, Stop (Approve). Else, Forward.
             if ($claim->tour_type === 'domestic' && $amount <= 50000) {
-                return null; // Stop chain (Approve)
+                return null; 
             }
             return $this->findSpecificRole('Accounts Executive HO');
         }
@@ -131,8 +125,12 @@ class TourClaimWorkflow
             return $this->findSpecificRole('HOD Finance');
         }
 
-        // 6. HOD Finance -> DG & CEO
+        // 6. HOD Finance -> DG & CEO (With 10k Limit) -- NEW RULE
         if (in_array('HOD Finance', $roles)) {
+            // Logic: If Domestic & <= 10k, Stop (Approve). Else, Forward.
+            if ($claim->tour_type === 'domestic' && $amount <= 10000) {
+                return null; 
+            }
             return $this->findSpecificRole('DG & CEO');
         }
 
@@ -146,7 +144,6 @@ class TourClaimWorkflow
 
     private function findGenericRoleInScope(string $role, ?int $officeId=null, ?int $deptId=null, ?string $region=null): ?Employee
     {
-        // In production, optimize this query to filter at SQL level
         $users = User::role($role)->get();
 
         foreach ($users as $user) {
@@ -164,7 +161,6 @@ class TourClaimWorkflow
     {
         $claim->update([
             'current_state' => $state,
-            // SAVE CODE, NOT ID
             'pending_with'  => $pendingWithEmployee?->employee_code, 
             'remarks'       => $remarks,
             'file_history'  => $this->appendHistory(
@@ -172,7 +168,7 @@ class TourClaimWorkflow
                 ucfirst($state), 
                 $remarks, 
                 Auth::user()->employee, 
-                $pendingWithEmployee?->employee_code // Store code in history too
+                $pendingWithEmployee?->employee_code
             )
         ]);
     }
@@ -184,9 +180,9 @@ class TourClaimWorkflow
             'timestamp'  => now()->toDateTimeString(),
             'action'     => $action,
             'actor_name' => $actor?->name,
-            'actor_code' => $actor?->employee_code, // Good for audit
+            'actor_code' => $actor?->employee_code,
             'remarks'    => $remarks,
-            'to_code'    => $toCode // Track who it went to
+            'to_code'    => $toCode
         ];
         return $history;
     }

@@ -19,6 +19,7 @@ use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\Builder;
 
 
 class TourClaimResource extends Resource
@@ -63,13 +64,6 @@ class TourClaimResource extends Resource
         ];
     }
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
-    {
-
-        // show only own claims in employee panel
-        return parent::getEloquentQuery()->where('employee_id', filament()->auth()->user()?->employee?->id ?? 0);
-    }
-
     public static function mutateFormDataBeforeCreate(array $data): array
     {
         return static::prepareFormData($data, isCreate: true);
@@ -78,6 +72,17 @@ class TourClaimResource extends Resource
     public static function mutateFormDataBeforeSave(array $data): array
     {
         return static::prepareFormData($data, isCreate: false);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $employee = filament()->auth()->user()?->employee;
+
+        return parent::getEloquentQuery()
+            ->where(function (Builder $query) use ($employee) {
+                $query->where('employee_id', $employee?->id) // Created by me
+                      ->orWhere('pending_with', $employee?->employee_code); // OR Assigned to me
+            });
     }
 
     protected static function prepareFormData(array $data, bool $isCreate): array

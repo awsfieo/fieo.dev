@@ -8,24 +8,24 @@ use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Forms\Components\Textarea;
 use Illuminate\Support\Facades\Auth;
-use Filament\Notifications\Notification; // Import the Facade
+use Filament\Notifications\Notification;
 
 class ViewTourClaim extends ViewRecord
 {
     protected static string $resource = TourClaimResource::class;
 
-   protected function getHeaderActions(): array
+    protected function getHeaderActions(): array
     {
         return [
-            // 1. Submit Action (Logic: Visible if Draft + Created by Me)
+            // 1. Submit Action
             Actions\Action::make('submit')
                 ->label('Submit for Review')
                 ->color('primary')
                 ->icon('heroicon-m-paper-airplane')
-                // FIX: Check employee_id (Ownership) instead of pending_with for Drafts
-                ->visible(fn ($record) => 
-                    $record->current_state === 'draft' && 
-                    $record->employee_id === Auth::user()->employee?->id
+                ->visible(
+                    fn($record) =>
+                    $record->current_state === 'draft' &&
+                        $record->employee_id === Auth::user()->employee?->id
                 )
                 ->requiresConfirmation()
                 ->action(function ($record, TourClaimWorkflow $workflow) {
@@ -34,14 +34,24 @@ class ViewTourClaim extends ViewRecord
                     $this->redirect($this->getResource()::getUrl('view', ['record' => $record]));
                 }),
 
-            // 2. Forward Action (Logic: Visible if Pending With Me)
+            // 2. Forward Action (Visible if Pending with Me AND Next Actor Exists)
             Actions\Action::make('forward')
                 ->label('Recommend / Forward')
                 ->color('success')
                 ->icon('heroicon-m-arrow-right-circle')
-                // Keep this: Checks if pending_with matches your EMPLOYEE CODE
-                ->visible(fn ($record) => $record->pending_with === Auth::user()->employee?->employee_code)
-                ->form([
+                ->visible(function ($record, TourClaimWorkflow $workflow) {
+                    // 1. Must be pending with me
+                    if ($record->pending_with !== Auth::user()->employee?->employee_code) {
+                        return false;
+                    }
+
+                    // 2. Check workflow: Is there a next person?
+                    $nextActor = $workflow->determineNextActor($record, 'Forward', Auth::user());
+
+                    // Show Forward ONLY if there IS a next actor
+                    return $nextActor !== null;
+                })
+                ->schema([
                     Textarea::make('remarks')->required()->label('Remarks')
                 ])
                 ->action(function ($record, array $data, TourClaimWorkflow $workflow) {
@@ -50,14 +60,25 @@ class ViewTourClaim extends ViewRecord
                     $this->redirect($this->getResource()::getUrl('view', ['record' => $record]));
                 }),
 
-            // 3. Approve Action
+            // 3. Approve Action (Visible if Pending with Me AND NO Next Actor)
             Actions\Action::make('approve')
                 ->label('Final Approval')
                 ->color('success')
                 ->icon('heroicon-m-check-badge')
-                ->visible(fn ($record) => $record->pending_with === Auth::user()->employee?->employee_code)
+                ->visible(function ($record, TourClaimWorkflow $workflow) {
+                    // 1. Must be pending with me
+                    if ($record->pending_with !== Auth::user()->employee?->employee_code) {
+                        return false;
+                    }
+
+                    // 2. Check workflow: Is there a next person?
+                    $nextActor = $workflow->determineNextActor($record, 'Forward', Auth::user());
+
+                    // Show Approve ONLY if there is NO next actor (End of Chain)
+                    return $nextActor === null;
+                })
                 ->requiresConfirmation()
-                ->form([
+                ->schema([
                     Textarea::make('remarks')->label('Approval Note')->default('Approved.')
                 ])
                 ->action(function ($record, array $data, TourClaimWorkflow $workflow) {
@@ -66,23 +87,24 @@ class ViewTourClaim extends ViewRecord
                     $this->redirect($this->getResource()::getUrl('view', ['record' => $record]));
                 }),
 
-            // 4. Reject Action
-            Actions\Action::make('reject')
-                ->label('Return / Reject')
-                ->color('danger')
-                ->icon('heroicon-m-x-circle')
-                ->visible(fn ($record) => $record->pending_with === Auth::user()->employee?->employee_code)
-                ->form([
-                    Textarea::make('reason')->required()->label('Reason')
+            // 4. Raise Query Action (Always visible if Pending with Me)
+            Actions\Action::make('query')
+                ->label('Raise Query')
+                ->color('warning')
+                ->icon('heroicon-m-question-mark-circle')
+                ->visible(fn($record) => $record->pending_with === Auth::user()->employee?->employee_code)
+                ->schema([
+                    Textarea::make('query')->required()->label('Query')
                 ])
                 ->action(function ($record, array $data, TourClaimWorkflow $workflow) {
-                    $workflow->reject($record, $data['reason']);
-                    Notification::make()->title('Claim returned to employee.')->danger()->send();
+                    $workflow->query($record, $data['query']);
+                    Notification::make()->title('Claim returned to employee with a query.')->warning()->send();
                     $this->redirect($this->getResource()::getUrl('view', ['record' => $record]));
                 }),
 
+            // Edit Action (Visible for Draft or Query)
             Actions\EditAction::make()
-                ->visible(fn ($record) => $record->current_state === 'draft'),
+                ->visible(fn($record) => in_array($record->current_state, ['draft', 'query'])),
         ];
     }
 }
