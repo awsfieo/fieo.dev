@@ -811,7 +811,7 @@ class DatabaseSeeder extends Seeder
 
     private function seedCurrentAllocations(): void
     {
-        $path = database_path('seeders/data/employees.csv'); // Verify this path matches your folder structure
+        $path = database_path('seeders/data/employees.csv');
         if (! file_exists($path)) {
             $this->command?->error("CSV file not found at: $path");
             return;
@@ -822,32 +822,35 @@ class DatabaseSeeder extends Seeder
 
         $deptCount = 0;
         $desgCount = 0;
+        $basicCount = 0;
 
         foreach ($rows as $row) {
-            // CSV Mapping based on your file:
-            // 2: employee_code
-            // 8: designation_id
-            // 9: department_id
+            // CSV Mapping based on your file structure:
+            // Col 2: employee_code
+            // Col 8: designation_id
+            // Col 9: department_id
+            // Col 12: basic
 
             $empCode = trim($row[2] ?? '');
             $desgId  = isset($row[8]) && $row[8] !== '' ? (int)$row[8] : null;
             $deptId  = isset($row[9]) && $row[9] !== '' ? (int)$row[9] : null;
+            $basic   = isset($row[12]) && $row[12] !== '' ? (float)$row[12] : null;
 
             if (! $empCode) continue;
 
-            // Find Employee ID from DB
+            // Find Employee by Code
             $employee = \App\Models\Employee::where('employee_code', $empCode)->first();
 
             if ($employee) {
                 $now = now();
 
-                // 1. Seed Department History (Current)
+                // 1. Seed Department (Active)
                 if ($deptId) {
                     DB::table('department_employee')->updateOrInsert(
                         [
                             'employee_id'   => $employee->id,
                             'department_id' => $deptId,
-                            'to_date'       => null, // Ensure it's the active one
+                            'to_date'       => null, // Ensure it's the active record
                         ],
                         [
                             'from_date'  => $now,
@@ -858,7 +861,7 @@ class DatabaseSeeder extends Seeder
                     $deptCount++;
                 }
 
-                // 2. Seed Designation History (Current)
+                // 2. Seed Designation (Active)
                 if ($desgId) {
                     DB::table('designation_employee')->updateOrInsert(
                         [
@@ -867,18 +870,39 @@ class DatabaseSeeder extends Seeder
                             'to_date'        => null,
                         ],
                         [
-                            'employee_code'  => $empCode, // Redundant but useful for audit logs as per your migration
-                            'from_date'      => $now,
-                            'created_at'     => $now,
-                            'updated_at'     => $now,
+                            'employee_code' => $empCode,
+                            'from_date'     => $now,
+                            'created_at'    => $now,
+                            'updated_at'    => $now,
                         ]
                     );
                     $desgCount++;
                 }
+
+                // 3. Seed Basic Pay (Active) - NEW
+                if ($basic) {
+                    // Optional: Sync main table cache for performance
+                    $employee->update(['basic' => $basic]);
+
+                    DB::table('employee_basic')->updateOrInsert(
+                        [
+                            'employee_id' => $employee->id,
+                            'to_date'     => null, // Active record
+                        ],
+                        [
+                            'basic_pay'  => $basic,
+                            'from_date'  => $now,
+                            'remarks'    => 'Initial Import',
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ]
+                    );
+                    $basicCount++;
+                }
             }
         }
 
-        $this->command->info("Seeded Allocations: $deptCount departments, $desgCount designations assigned.");
+        $this->command->info("Seeded Allocations: $deptCount depts, $desgCount desgs, $basicCount basic pay records.");
     }
 
     private function toBool($value, bool $default = true): bool
