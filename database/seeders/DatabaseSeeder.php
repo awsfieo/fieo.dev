@@ -45,6 +45,7 @@ class DatabaseSeeder extends Seeder
         $this->seedDesignations();
         $this->seedDepartments();
         $this->seedEmployees();
+        $this->seedCurrentAllocations();
     }
 
     private function seedUsers(): void
@@ -129,9 +130,17 @@ class DatabaseSeeder extends Seeder
 
                 // 6. Chapter Head
                 $chapterHeads = [
-                    'aloksrivastava@fieo.org', 'amitkumarbaretha@fieo.org', 'bhupindersingh@fieo.org',
-                    'jpgoel@fieo.org', 'kksahoo@fieo.org', 'kaushikdutta@fieo.org', 'babu@fieo.org',
-                    'rajeev@fieo.org', 'kulkarni@fieo.org', 'soma@fieo.org', 'swaminathan@fieo.org',
+                    'aloksrivastava@fieo.org',
+                    'amitkumarbaretha@fieo.org',
+                    'bhupindersingh@fieo.org',
+                    'jpgoel@fieo.org',
+                    'kksahoo@fieo.org',
+                    'kaushikdutta@fieo.org',
+                    'babu@fieo.org',
+                    'rajeev@fieo.org',
+                    'kulkarni@fieo.org',
+                    'soma@fieo.org',
+                    'swaminathan@fieo.org',
                     'vinaysharma@fieo.org'
                 ];
                 if (in_array($email, $chapterHeads) && ! $user->hasRole('Chapter Head')) {
@@ -140,8 +149,10 @@ class DatabaseSeeder extends Seeder
 
                 // 7. Accounts Executive (Regional)
                 $accountsExecutives = [
-                    'grprajapati@fieo.org', 'jayeetaroy@fieo.org',
-                    'snazurudeen@fieo.org', 'ritahans@fieo.org'
+                    'grprajapati@fieo.org',
+                    'jayeetaroy@fieo.org',
+                    'snazurudeen@fieo.org',
+                    'ritahans@fieo.org'
                 ];
                 if (in_array($email, $accountsExecutives) && ! $user->hasRole('Accounts Executive')) {
                     $user->assignRole('Accounts Executive');
@@ -149,9 +160,14 @@ class DatabaseSeeder extends Seeder
 
                 // 8. HOD
                 $hods = [
-                    'apsrivastava@fieo.org', 'dhananjay@fieo.org', 'nirmalatete@fieo.org',
-                    'niteshmishra@fieo.org', 'ptsrinath@fieo.org', 'prashantseth@fieo.org',
-                    'pratiknavale@fieo.org', 'suvidhshah@fieo.org'
+                    'apsrivastava@fieo.org',
+                    'dhananjay@fieo.org',
+                    'nirmalatete@fieo.org',
+                    'niteshmishra@fieo.org',
+                    'ptsrinath@fieo.org',
+                    'prashantseth@fieo.org',
+                    'pratiknavale@fieo.org',
+                    'suvidhshah@fieo.org'
                 ];
                 if (in_array($email, $hods) && ! $user->hasRole('HOD')) {
                     $user->assignRole('HOD');
@@ -791,6 +807,78 @@ class DatabaseSeeder extends Seeder
         $this->command?->info('Employees seeded from employees.csv. Inserted/updated rows: ' . count($upsert));
         if ($skippedFk > 0)  $this->command?->warn("Employees skipped due to invalid foreign keys: {$skippedFk}");
         if ($skippedBad > 0) $this->command?->warn("Employees skipped due to missing/invalid base fields: {$skippedBad}");
+    }
+
+    private function seedCurrentAllocations(): void
+    {
+        $path = database_path('seeders/data/employees.csv'); // Verify this path matches your folder structure
+        if (! file_exists($path)) {
+            $this->command?->error("CSV file not found at: $path");
+            return;
+        }
+
+        $rows = array_map('str_getcsv', file($path));
+        $header = array_shift($rows); // Remove header
+
+        $deptCount = 0;
+        $desgCount = 0;
+
+        foreach ($rows as $row) {
+            // CSV Mapping based on your file:
+            // 2: employee_code
+            // 8: designation_id
+            // 9: department_id
+
+            $empCode = trim($row[2] ?? '');
+            $desgId  = isset($row[8]) && $row[8] !== '' ? (int)$row[8] : null;
+            $deptId  = isset($row[9]) && $row[9] !== '' ? (int)$row[9] : null;
+
+            if (! $empCode) continue;
+
+            // Find Employee ID from DB
+            $employee = \App\Models\Employee::where('employee_code', $empCode)->first();
+
+            if ($employee) {
+                $now = now();
+
+                // 1. Seed Department History (Current)
+                if ($deptId) {
+                    DB::table('department_employee')->updateOrInsert(
+                        [
+                            'employee_id'   => $employee->id,
+                            'department_id' => $deptId,
+                            'to_date'       => null, // Ensure it's the active one
+                        ],
+                        [
+                            'from_date'  => $now,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ]
+                    );
+                    $deptCount++;
+                }
+
+                // 2. Seed Designation History (Current)
+                if ($desgId) {
+                    DB::table('designation_employee')->updateOrInsert(
+                        [
+                            'employee_id'    => $employee->id,
+                            'designation_id' => $desgId,
+                            'to_date'        => null,
+                        ],
+                        [
+                            'employee_code'  => $empCode, // Redundant but useful for audit logs as per your migration
+                            'from_date'      => $now,
+                            'created_at'     => $now,
+                            'updated_at'     => $now,
+                        ]
+                    );
+                    $desgCount++;
+                }
+            }
+        }
+
+        $this->command->info("Seeded Allocations: $deptCount departments, $desgCount designations assigned.");
     }
 
     private function toBool($value, bool $default = true): bool
