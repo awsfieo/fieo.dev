@@ -9,29 +9,17 @@ use Illuminate\Support\Facades\Auth;
 
 class TourClaimWorkflow
 {
-    /**
-     * Submit a claim to start the chain.
-     */
     public function submit(TourClaim $claim): void
     {
-        // 1. Find the first reviewer based on Applicant's context
         $nextActor = $this->determineNextActor($claim, 'start');
-
-        // 2. Update state
         $this->updateState($claim, 'submitted', $nextActor, 'Claim submitted for review.');
     }
 
-    /**
-     * Forward to the next person (Relay).
-     */
     public function forward(TourClaim $claim, string $remarks): void
     {
         $currentUser = Auth::user();
-        
-        // 1. Find next actor based on Current User's Role
         $nextActor = $this->determineNextActor($claim, 'Forward', $currentUser);
 
-        // 2. If no one is next, it implies approval is needed (or end of chain)
         if (!$nextActor) {
             $this->approve($claim, $remarks);
             return;
@@ -61,10 +49,6 @@ class TourClaimWorkflow
         ]);
     }
 
-    /**
-     * THE LOGIC CORE
-     * CHANGED: Made public so the View can "peek" ahead.
-     */
     public function determineNextActor(TourClaim $claim, string $step, ?User $currentActor = null): ?Employee
     {
         $employee = $claim->employee;
@@ -74,6 +58,7 @@ class TourClaimWorkflow
 
         // --- START OF CHAIN ---
         if ($step === 'start') {
+            // REVERTED: Standard logic applies (Removed the NR bypass check)
             if ($deptType === 'CO') {
                 return $this->findGenericRoleInScope('Chapter Head', officeId: $employee->office_id);
             }
@@ -90,12 +75,11 @@ class TourClaimWorkflow
 
         // --- RELAY (FORWARDING) ---
         $roles = $currentActor?->getRoleNames()->toArray() ?? [];
-        
-        // Common amount calculation for limits
         $amount = ($claim->amount_reimburse_inr ?? 0) + ($claim->total_expenses_inr ?? 0);
 
         // 1. Chapter Head -> Accounts Executive {Region}
         if (in_array('Chapter Head', $roles)) {
+            // REVERTED: Standard logic applies (Removed the NR bypass check)
             return $this->findGenericRoleInScope('Accounts Executive', region: $region);
         }
 
@@ -111,9 +95,14 @@ class TourClaimWorkflow
             }
         }
 
-        // 4. Regional Head -> Accounts Executive HO (With 50k Limit)
+        // 4. Regional Head -> Accounts Executive HO (With Checks)
         if (in_array('Regional Head', $roles)) {
-            // Logic: If Domestic & <= 50k, Stop (Approve). Else, Forward.
+            // [NEW LOGIC]: If Region is NR, ALWAYS forward to Acc Exec HO (No approval power)
+            if ($region === 'NR') {
+                return $this->findSpecificRole('Accounts Executive HO');
+            }
+
+            // Standard Logic: If Domestic & <= 50k, Stop (Approve).
             if ($claim->tour_type === 'domestic' && $amount <= 50000) {
                 return null; 
             }
@@ -125,9 +114,8 @@ class TourClaimWorkflow
             return $this->findSpecificRole('HOD Finance');
         }
 
-        // 6. HOD Finance -> DG & CEO (With 10k Limit) -- NEW RULE
+        // 6. HOD Finance -> DG & CEO (With 10k Limit)
         if (in_array('HOD Finance', $roles)) {
-            // Logic: If Domestic & <= 10k, Stop (Approve). Else, Forward.
             if ($claim->tour_type === 'domestic' && $amount <= 10000) {
                 return null; 
             }

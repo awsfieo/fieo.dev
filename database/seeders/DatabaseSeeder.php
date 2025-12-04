@@ -87,16 +87,74 @@ class DatabaseSeeder extends Seeder
             $exists ? $updated++ : $created++;
 
             if ($user = User::where('email', $email)->first()) {
-                $isInternal = str_ends_with($email, '@fieo.org');
+                $isEmployee = str_ends_with($email, '@fieo.org');
                 $isVerified = ! is_null($user->email_verified_at);
 
-                if ($isInternal && $isVerified && ! $user->hasRole('Employee')) {
+                if ($isEmployee && $isVerified && ! $user->hasRole('Employee')) {
                     $user->assignRole('Employee');
                     $assigned++;
                 }
 
                 if ($email === 'admin@fieo.org' && ! $user->hasRole('Super Admin')) {
                     $user->assignRole('Super Admin');
+                }
+
+                // --- PASTE THIS AFTER THE SUPER ADMIN CHECK ---
+
+                // 2. DG & CEO
+                if ($email === 'ajaysahai@fieo.org' && ! $user->hasRole('DG & CEO')) {
+                    $user->assignRole('DG & CEO');
+                }
+
+                // 3. HOD Finance
+                if ($email === 'sushilkumar@fieo.org' && ! $user->hasRole('HOD Finance')) {
+                    $user->assignRole('HOD Finance');
+                }
+
+                // 4. Accounts Executive HO
+                if ($email === 'rakeshchand@fieo.org' && ! $user->hasRole('Accounts Executive HO')) {
+                    $user->assignRole('Accounts Executive HO');
+                }
+
+                // 5. Regional Head
+                $regionalHeads = [
+                    'ashishjain@fieo.org',
+                    'juinchoudhury@fieo.org',
+                    'rktiwari@fieo.org',
+                    'unni@fieo.org',
+                ];
+                if (in_array($email, $regionalHeads) && ! $user->hasRole('Regional Head')) {
+                    $user->assignRole('Regional Head');
+                }
+
+                // 6. Chapter Head
+                $chapterHeads = [
+                    'aloksrivastava@fieo.org', 'amitkumarbaretha@fieo.org', 'bhupindersingh@fieo.org',
+                    'jpgoel@fieo.org', 'kksahoo@fieo.org', 'kaushikdutta@fieo.org', 'babu@fieo.org',
+                    'rajeev@fieo.org', 'kulkarni@fieo.org', 'soma@fieo.org', 'swaminathan@fieo.org',
+                    'vinaysharma@fieo.org'
+                ];
+                if (in_array($email, $chapterHeads) && ! $user->hasRole('Chapter Head')) {
+                    $user->assignRole('Chapter Head');
+                }
+
+                // 7. Accounts Executive (Regional)
+                $accountsExecutives = [
+                    'grprajapati@fieo.org', 'jayeetaroy@fieo.org',
+                    'snazurudeen@fieo.org', 'ritahans@fieo.org'
+                ];
+                if (in_array($email, $accountsExecutives) && ! $user->hasRole('Accounts Executive')) {
+                    $user->assignRole('Accounts Executive');
+                }
+
+                // 8. HOD
+                $hods = [
+                    'apsrivastava@fieo.org', 'dhananjay@fieo.org', 'nirmalatete@fieo.org',
+                    'niteshmishra@fieo.org', 'ptsrinath@fieo.org', 'prashantseth@fieo.org',
+                    'pratiknavale@fieo.org', 'suvidhshah@fieo.org'
+                ];
+                if (in_array($email, $hods) && ! $user->hasRole('HOD')) {
+                    $user->assignRole('HOD');
                 }
             }
         }
