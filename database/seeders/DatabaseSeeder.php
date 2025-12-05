@@ -846,7 +846,7 @@ class DatabaseSeeder extends Seeder
 
                 // 1. Seed Department (Active)
                 if ($deptId) {
-                    DB::table('department_employee')->updateOrInsert(
+                    DB::table('employee_department')->updateOrInsert(
                         [
                             'employee_id'   => $employee->id,
                             'department_id' => $deptId,
@@ -863,7 +863,7 @@ class DatabaseSeeder extends Seeder
 
                 // 2. Seed Designation (Active)
                 if ($desgId) {
-                    DB::table('designation_employee')->updateOrInsert(
+                    DB::table('employee_designation')->updateOrInsert(
                         [
                             'employee_id'    => $employee->id,
                             'designation_id' => $desgId,

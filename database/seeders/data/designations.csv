@@ -1,26 +1,31 @@
-﻿"sort_id","designation","long_title","short_title","seniority","is_officer","is_active"
-"1","Director General & CEO","Director General & CEO","DG & CEO","1","TRUE","TRUE"
-"2","Addl. Director General","Additional Director General","Addl DG","2","TRUE","TRUE"
-"3","Jt. Director General","Joint Director General","Jt DG","3","TRUE","TRUE"
-"4","DDG","Deputy Director General","DDG","4","TRUE","TRUE"
-"5","Jt. DDG","Joint Deputy Director General","Jt DDG","5","TRUE","TRUE"
-"6","Advisor","Advisor","Advisor","6","TRUE","TRUE"
-"7","Director","Director","Director","7","TRUE","TRUE"
-"8","Jt. Director","Joint Director","JD","8","TRUE","TRUE"
-"9","Dy. Director","Deputy Director","DD","9","TRUE","TRUE"
-"10","Asst. Director","Assistant Director","AD","10","TRUE","TRUE"
-"11","Mgmt. Executive","Management Executive","ME","11","FALSE","TRUE"
-"12","Coordinator","Coordinator","Coordinator","12","FALSE","TRUE"
-"13","Mgmt. Trainee","Management Trainee","MT","13","FALSE","TRUE"
-"14","Exect. Asst.","Executive Assistant","Exect. Asst.","14","FALSE","TRUE"
-"15","Jr. Exect. Asst.","Junior Executive Assistant","Jr. Exect. Asst.","15","FALSE","TRUE"
-"16","Jr. Asst.","Junior Assistant","Jr. Asst.","16","FALSE","TRUE"
-"17","Sr. Record Keeper","Senior Record Keeper","Sr. Record Keeper","17","FALSE","TRUE"
-"18","Sr. Front Office Asst.","Senior Front Office Assistant","Sr. Front Office Asst.","18","FALSE","TRUE"
-"19","Front Office Asst.","Front Office Assistant","Front Office Asst.","19","FALSE","TRUE"
-"20","Sr. DMO","Senior Duplicate Machine Operator","Sr. DMO","20","FALSE","TRUE"
-"21","DMO","Duplicate Machine Operator","DMO","21","FALSE","TRUE"
-"22","Vehicle Supervisor","Vehicle Supervisor","Vehicle Supervisor","22","FALSE","TRUE"
-"23","Driver","Driver","Driver","23","FALSE","TRUE"
-"24","Messenger","Messenger","Messenger","24","FALSE","TRUE"
-"25","Messenger cum Peon","Messenger cum Peon","Messenger cum Peon","25","FALSE","TRUE"
+sort_id,designation,long_title,short_title,seniority,is_officer,is_active
+1,Director General & CEO,Director General & CEO,DG & CEO,1,TRUE,TRUE
+2,Addl. Director General,Additional Director General,Addl DG,2,TRUE,TRUE
+3,Jt. Director General,Joint Director General,Jt DG,3,TRUE,TRUE
+4,DDG,Deputy Director General,DDG,4,TRUE,TRUE
+5,Jt. DDG,Joint Deputy Director General,Jt DDG,5,TRUE,TRUE
+6,Advisor,Advisor,Advisor,6,TRUE,TRUE
+7,Director,Director,Director,7,TRUE,TRUE
+8,Jt. Director,Joint Director,JD,8,TRUE,TRUE
+9,Dy. Director,Deputy Director,DD,9,TRUE,TRUE
+10,Asst. Director,Assistant Director,AD,10,TRUE,TRUE
+11,Coordinator,Coordinator,Coordinator,11,FALSE,TRUE
+12,Mgmt. Executive,Management Executive,ME,12,FALSE,TRUE
+13,Mgmt. Trainee,Management Trainee,MT,13,FALSE,TRUE
+14,Exect. Asst.,Executive Assistant,Exect. Asst.,14,FALSE,TRUE
+15,Receptionist,Receptionist,Receptionist,15,FALSE,TRUE
+16,Vehicle Supervisor,Vehicle Supervisor,Vehicle Supervisor,16,FALSE,TRUE
+17,Sr. Driver cum Mechanic,Senior Driver cum Mechanic,Sr. Driver cum Mechanic,17,FALSE,TRUE
+18,Jr. Exect. Asst.,Junior Executive Assistant,Jr. Exect. Asst.,18,FALSE,TRUE
+19,Sr. Driver,Senior Driver,Sr. Driver,19,FALSE,TRUE
+20,Sr. DMO,Senior Duplicate Machine Operator,Sr. DMO,20,FALSE,TRUE
+21,Driver,Driver,Driver,21,FALSE,TRUE
+22,DMO,Duplicate Machine Operator,DMO,22,FALSE,TRUE
+23,Jr. Asst.,Junior Assistant,Jr. Asst.,23,FALSE,TRUE
+24,Sr. Front Office Asst.,Senior Front Office Assistant,Sr. Front Office Asst.,24,FALSE,TRUE
+25,Sr. Record Keeper,Senior Record Keeper,Sr. Record Keeper,25,FALSE,TRUE
+26,Front Office Asst.,Front Office Assistant,Front Office Asst.,26,FALSE,TRUE
+27,Record Keeper,Record Keeper,Record Keeper,27,FALSE,TRUE
+28,Messenger cum Driver,Messenger cum Driver,Messenger cum Driver,28,FALSE,TRUE
+29,Messenger cum Peon,Messenger cum Peon,Messenger cum Peon,29,FALSE,TRUE
+30,Messenger,Messenger,Messenger,30,FALSE,TRUE
