@@ -49,12 +49,25 @@ class TourClaimWorkflow
         ]);
     }
 
+    /**
+     * Employee replies to a query and resubmits.
+     */
+    public function replyToQuery(TourClaim $claim, string $reply): void
+    {
+        // 1. Restart the chain (usually goes to Accounts Executive)
+        $nextActor = $this->determineNextActor($claim, 'start');
+
+        // 2. Update state to 'submitted'
+        // We prepend "Query Reply:" so the reviewer immediately knows context
+        $this->updateState($claim, 'submitted', $nextActor, 'Query Reply: ' . $reply);
+    }
+
     public function determineNextActor(TourClaim $claim, string $step, ?User $currentActor = null): ?Employee
     {
         $employee = $claim->employee;
         $dept     = $employee->department;
-        $region   = $dept?->region ?? 'HO'; 
-        $deptType = $dept?->type ?? 'HO';   
+        $region   = $dept?->region ?? 'HO';
+        $deptType = $dept?->type ?? 'HO';
 
         // --- START OF CHAIN ---
         if ($step === 'start') {
@@ -104,7 +117,7 @@ class TourClaimWorkflow
 
             // Standard Logic: If Domestic & <= 50k, Stop (Approve).
             if ($claim->tour_type === 'domestic' && $amount <= 50000) {
-                return null; 
+                return null;
             }
             return $this->findSpecificRole('Accounts Executive HO');
         }
@@ -117,7 +130,7 @@ class TourClaimWorkflow
         // 6. HOD Finance -> DG & CEO (With 10k Limit)
         if (in_array('HOD Finance', $roles)) {
             if ($claim->tour_type === 'domestic' && $amount <= 10000) {
-                return null; 
+                return null;
             }
             return $this->findSpecificRole('DG & CEO');
         }
@@ -130,7 +143,7 @@ class TourClaimWorkflow
         return User::role($role)->first()?->employee;
     }
 
-    private function findGenericRoleInScope(string $role, ?int $officeId=null, ?int $deptId=null, ?string $region=null): ?Employee
+    private function findGenericRoleInScope(string $role, ?int $officeId = null, ?int $deptId = null, ?string $region = null): ?Employee
     {
         $users = User::role($role)->get();
 
@@ -149,13 +162,13 @@ class TourClaimWorkflow
     {
         $claim->update([
             'current_state' => $state,
-            'pending_with'  => $pendingWithEmployee?->employee_code, 
+            'pending_with'  => $pendingWithEmployee?->employee_code,
             'remarks'       => $remarks,
             'file_history'  => $this->appendHistory(
-                $claim, 
-                ucfirst($state), 
-                $remarks, 
-                Auth::user()->employee, 
+                $claim,
+                ucfirst($state),
+                $remarks,
+                Auth::user()->employee,
                 $pendingWithEmployee?->employee_code
             )
         ]);

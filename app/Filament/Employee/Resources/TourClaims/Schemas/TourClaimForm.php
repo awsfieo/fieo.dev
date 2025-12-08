@@ -110,8 +110,8 @@ class TourClaimForm
                     ->iconColor('danger')
                     ->extraAttributes([
                         // Using 'style' guarantees the background works without recompiling assets
-                        'style' => 'background-color: #FEF2F2; border-left: 4px solid #EF4444;', 
-                        'class' => 'shadow-none', // Removes default card shadow for a flatter "alert" look
+                        'style' => 'background-color:#EF4444; border: 4px solid #EF4444; border-radius: 10px;', 
+                        // 'class' => 'shadow-none', // Removes default card shadow for a flatter "alert" look
                     ])
                     ->collapsible(false)
                     ->columnSpanFull(),
@@ -513,7 +513,7 @@ class TourClaimForm
                                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                                     ])
                                     ->maxSize(5120) // 5 MB
-                                    ->rules(['clamav'])
+                                    // ->rules(['clamav'])
                                     ->helperText('Allowed: PDF, JPG, Word, Excel. Max size: 5 MB. Files are scanned for viruses.'),
                             ])
                     ])

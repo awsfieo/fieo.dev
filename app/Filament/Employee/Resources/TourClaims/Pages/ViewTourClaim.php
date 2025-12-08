@@ -17,15 +17,14 @@ class ViewTourClaim extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            // 1. Submit Action
+            // 1. Submit Action (Only for Drafts now)
             Actions\Action::make('submit')
                 ->label('Submit for Review')
                 ->color('primary')
                 ->icon('heroicon-m-paper-airplane')
-                ->visible(
-                    fn($record) =>
-                    in_array($record->current_state, ['draft', 'query']) &&
-                        $record->employee_id === Auth::user()->employee?->id
+                ->visible(fn ($record) => 
+                    $record->current_state === 'draft' && // Removed 'query' from here
+                    $record->employee_id === Auth::user()->employee?->id
                 )
                 ->requiresConfirmation()
                 ->action(function ($record, TourClaimWorkflow $workflow) {
@@ -34,7 +33,34 @@ class ViewTourClaim extends ViewRecord
                     $this->redirect($this->getResource()::getUrl('index'));
                 }),
 
-            // 2. Forward Action (Visible if Pending with Me AND Next Actor Exists)
+            // 1b. Reply to Query Action (New)
+            Actions\Action::make('reply')
+                ->label('Reply to Query')
+                ->color('primary')
+                ->icon('heroicon-m-chat-bubble-left-right')
+                ->visible(fn ($record) => 
+                    $record->current_state === 'query' && 
+                    $record->employee_id === Auth::user()->employee?->id
+                )
+                ->requiresConfirmation()
+                ->modalHeading('Reply to Query')
+                ->modalDescription('Please provide your explanation or corrections regarding the query.')
+                // This form captures the remark
+                ->schema([
+                    Textarea::make('reply_note')
+                        ->label('Reply / Remarks')
+                        ->required()
+                        ->rows(3)
+                ])
+                ->action(function ($record, array $data, TourClaimWorkflow $workflow) {
+                    // Call the new workflow method
+                    $workflow->replyToQuery($record, $data['reply_note']);
+                    
+                    Notification::make()->title('Reply submitted successfully!')->success()->send();
+                    $this->redirect($this->getResource()::getUrl('index'));
+                }),
+
+            // 2. Forward Action
             Actions\Action::make('forward')
                 ->label('Recommend / Forward')
                 ->color('success')
