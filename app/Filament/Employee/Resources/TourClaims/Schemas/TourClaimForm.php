@@ -98,19 +98,19 @@ class TourClaimForm
                         Textarea::make('query_reason')
                             ->label('Reviewer Remarks / Query')
                             ->disabled()
-                            ->dehydrated(false) 
+                            ->dehydrated(false)
                             ->rows(3)
                             // Use standard Tailwind text color for the input content
                             ->extraInputAttributes(['class' => 'text-red-600 font-medium'])
-                            ->afterStateHydrated(fn ($component, $record) => $component->state($record?->remarks))
+                            ->afterStateHydrated(fn($component, $record) => $component->state($record?->remarks))
                             ->columnSpanFull(),
                     ])
-                    ->visible(fn ($record) => $record && $record->current_state === 'query')
+                    ->visible(fn($record) => $record && $record->current_state === 'query')
                     ->icon('heroicon-m-exclamation-circle')
                     ->iconColor('danger')
                     ->extraAttributes([
                         // Using 'style' guarantees the background works without recompiling assets
-                        'style' => 'background-color:#EF4444; border: 4px solid #EF4444; border-radius: 10px;', 
+                        'style' => 'background-color:#EF4444; border: 4px solid #EF4444; border-radius: 10px;',
                         // 'class' => 'shadow-none', // Removes default card shadow for a flatter "alert" look
                     ])
                     ->collapsible(false)
@@ -636,6 +636,45 @@ class TourClaimForm
                             ]),
                     ])
                     ->columnSpanFull(),
+
+                // --- NEW: Application History Section ---
+                Section::make('Application History')
+                    ->collapsible()
+                    ->collapsed() // Collapsed by default to save space
+                    ->schema([
+                        Repeater::make('file_history')
+                            ->label('') // Hide label for cleaner look
+                            ->schema([
+                                TextInput::make('timestamp')
+                                    ->label('Date & Time')
+                                    ->formatStateUsing(fn($state) => \Carbon\Carbon::parse($state)->format('d M Y, h:i A'))
+                                    ->columnSpan(3),
+
+                                TextInput::make('actor_name')
+                                    ->label('Official')
+                                    ->formatStateUsing(fn($state, $component) => $state)
+                                    ->columnSpan(2),
+
+                                TextInput::make('action')
+                                    ->label('Action')
+                                    ->extraInputAttributes(fn($state) => match (strtolower($state)) {
+                                        'approved' => ['class' => 'text-success-600 font-bold'],
+                                        'rejected', 'query' => ['class' => 'text-danger-600 font-bold'],
+                                        default => ['class' => 'font-medium'],
+                                    })
+                                    ->columnSpan(2),
+
+                                Textarea::make('remarks')
+                                    ->label('Remarks')
+                                    ->rows(2)
+                                    ->columnSpan(5),
+                            ])
+                            ->addable(false)
+                            ->deletable(false)
+                            ->reorderable(false)
+                            ->columns(12) // 12-column grid for better layout
+                            ->columnSpanFull(),
+                    ])->columnSpanFull(),
 
                 Hidden::make('designation_id')
                     ->default(fn() => Auth::user()?->employee?->designation_id)
