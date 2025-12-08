@@ -68,6 +68,14 @@ return new class extends Migration
             // Full audit trail: [{datetime, action, from, to, remarks, attachments}, ...]
             $table->json('file_history')->nullable();
 
+            $table->string('sanction_order_url')->nullable(); // If you generate a PDF
+
+            // Settlement Details
+            $table->date('settlement_date')->nullable();
+            $table->decimal('settlement_amount', 12, 2)->nullable();
+            $table->string('settlement_utr')->nullable();
+            $table->text('settlement_remarks')->nullable();
+
             $table->dateTimeTz('submitted_at')->nullable();
             $table->dateTimeTz('closed_at')->nullable();
 

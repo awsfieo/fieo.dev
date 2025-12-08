@@ -28,17 +28,6 @@ class TourClaimWorkflow
         $this->updateState($claim, 'Reviewed', $nextActor, $remarks);
     }
 
-    public function approve(TourClaim $claim, string $remarks): void
-    {
-        $claim->update([
-            'current_state' => 'approved',
-            'pending_with'  => null,
-            'closed_at'     => now(),
-            'remarks'       => $remarks,
-            'file_history'  => $this->appendHistory($claim, 'Approved', 'Final Approval. ' . $remarks, Auth::user()->employee),
-        ]);
-    }
-
     public function query(TourClaim $claim, string $reason): void
     {
         $claim->update([
@@ -186,5 +175,60 @@ class TourClaimWorkflow
             'to_code'    => $toCode
         ];
         return $history;
+    }
+
+    public function approve(TourClaim $claim, string $remarks): void
+    {
+        // 1. Generate Sanction Order Number (Simple Logic)
+        // Format: SO/FY-YEAR/ID (e.g., SO/24-25/105)
+        $fy = date('y') . '-' . (date('y') + 1);
+        $sanctionNo = 'SO/' . $fy . '/' . str_pad($claim->id, 4, '0', STR_PAD_LEFT);
+
+        // 2. Find the Accounts Person responsible for payment
+        // Usually, this goes back to the Accounts Executive who started it, or HO Accounts
+        $accountsRole = $claim->employee->office->type === 'HO' ? 'Accounts Executive HO' : 'Accounts Executive';
+        $accountsPerson = $this->findGenericRoleInScope($accountsRole, region: $claim->employee->department->region);
+
+        // Fallback: If no regional accounts, send to HO
+        if (!$accountsPerson) {
+            $accountsPerson = $this->findSpecificRole('Accounts Executive HO');
+        }
+
+        // 3. Update State -> 'approved' but PENDING with Accounts
+        $claim->update([
+            'current_state'     => 'approved', // Status is approved
+            'sanction_order_no' => $sanctionNo,
+            'pending_with'      => $accountsPerson?->employee_code, // Assigned to Accounts for payment
+            'remarks'           => $remarks,
+            'file_history'      => $this->appendHistory(
+                $claim, 
+                'Approved', 
+                "Sanction Order $sanctionNo Issued. Forwarded to Accounts for Settlement. Note: $remarks", 
+                Auth::user()->employee,
+                $accountsPerson?->employee_code
+            ),
+        ]);
+    }
+
+    public function settle(TourClaim $claim, array $data): void
+    {
+        $claim->update([
+            'current_state'     => 'settled',
+            'pending_with'      => null, // Workflow Ends Here
+            'closed_at'         => now(),
+            
+            // Save Payment Details
+            'settlement_date'   => $data['date'],
+            'settlement_amount' => $data['amount'],
+            'settlement_utr'    => $data['utr'],
+            'settlement_remarks'=> $data['remarks'] ?? null,
+
+            'file_history'      => $this->appendHistory(
+                $claim, 
+                'Settled', 
+                "Payment Processed. UTR: {$data['utr']}, Amt: {$data['amount']}", 
+                Auth::user()->employee
+            ),
+        ]);
     }
 }

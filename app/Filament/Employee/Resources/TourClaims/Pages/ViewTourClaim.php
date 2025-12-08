@@ -22,9 +22,10 @@ class ViewTourClaim extends ViewRecord
                 ->label('Submit for Review')
                 ->color('primary')
                 ->icon('heroicon-m-paper-airplane')
-                ->visible(fn ($record) => 
+                ->visible(
+                    fn($record) =>
                     $record->current_state === 'draft' && // Removed 'query' from here
-                    $record->employee_id === Auth::user()->employee?->id
+                        $record->employee_id === Auth::user()->employee?->id
                 )
                 ->requiresConfirmation()
                 ->action(function ($record, TourClaimWorkflow $workflow) {
@@ -38,9 +39,10 @@ class ViewTourClaim extends ViewRecord
                 ->label('Reply to Query')
                 ->color('primary')
                 ->icon('heroicon-m-chat-bubble-left-right')
-                ->visible(fn ($record) => 
-                    $record->current_state === 'query' && 
-                    $record->employee_id === Auth::user()->employee?->id
+                ->visible(
+                    fn($record) =>
+                    $record->current_state === 'query' &&
+                        $record->employee_id === Auth::user()->employee?->id
                 )
                 ->requiresConfirmation()
                 ->modalHeading('Reply to Query')
@@ -55,7 +57,7 @@ class ViewTourClaim extends ViewRecord
                 ->action(function ($record, array $data, TourClaimWorkflow $workflow) {
                     // Call the new workflow method
                     $workflow->replyToQuery($record, $data['reply_note']);
-                    
+
                     Notification::make()->title('Reply submitted successfully!')->success()->send();
                     $this->redirect($this->getResource()::getUrl('index'));
                 }),
@@ -131,6 +133,47 @@ class ViewTourClaim extends ViewRecord
             // Edit Action (Visible for Draft or Query)
             Actions\EditAction::make()
                 ->visible(fn($record) => in_array($record->current_state, ['draft', 'query'])),
+
+            // ... (Previous Actions)
+
+            // 5. Settlement Action (The Final Step)
+            Actions\Action::make('settle')
+                ->label('Settlement Details')
+                ->color('success')
+                ->icon('heroicon-m-currency-rupee')
+                ->visible(
+                    fn($record) =>
+                    $record->current_state === 'approved' && // Must be approved first
+                        $record->pending_with === Auth::user()->employee?->employee_code // Must be assigned to me
+                )
+                ->form([
+                    \Filament\Forms\Components\DatePicker::make('date')
+                        ->label('Payment Date')
+                        ->required()
+                        ->default(now()),
+
+                    \Filament\Forms\Components\TextInput::make('amount')
+                        ->label('Settlement Amount')
+                        ->numeric()
+                        ->prefix('₹')
+                        ->required()
+                        ->default(fn($record) => $record->amount_reimburse_inr), // Prefill with approved amount
+
+                    \Filament\Forms\Components\TextInput::make('utr')
+                        ->label('UTR / Cheque No / Reference')
+                        ->required()
+                        ->maxLength(50),
+
+                    Textarea::make('remarks')
+                        ->label('Payment Note')
+                        ->default('Payment Released.')
+                ])
+                ->action(function ($record, array $data, TourClaimWorkflow $workflow) {
+                    $workflow->settle($record, $data);
+
+                    Notification::make()->title('Claim Settled & Closed!')->success()->send();
+                    $this->redirect($this->getResource()::getUrl('index'));
+                }),
         ];
     }
 }
