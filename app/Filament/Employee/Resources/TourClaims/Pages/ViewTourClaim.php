@@ -24,14 +24,14 @@ class ViewTourClaim extends ViewRecord
                 ->icon('heroicon-m-paper-airplane')
                 ->visible(
                     fn($record) =>
-                    $record->current_state === 'draft' &&
+                    in_array($record->current_state, ['draft', 'query']) &&
                         $record->employee_id === Auth::user()->employee?->id
                 )
                 ->requiresConfirmation()
                 ->action(function ($record, TourClaimWorkflow $workflow) {
                     $workflow->submit($record);
                     Notification::make()->title('Claim submitted successfully!')->success()->send();
-                    $this->redirect($this->getResource()::getUrl('view', ['record' => $record]));
+                    $this->redirect($this->getResource()::getUrl('index'));
                 }),
 
             // 2. Forward Action (Visible if Pending with Me AND Next Actor Exists)
@@ -57,7 +57,7 @@ class ViewTourClaim extends ViewRecord
                 ->action(function ($record, array $data, TourClaimWorkflow $workflow) {
                     $workflow->forward($record, $data['remarks']);
                     Notification::make()->title('Claim forwarded.')->success()->send();
-                    $this->redirect($this->getResource()::getUrl('view', ['record' => $record]));
+                    $this->redirect($this->getResource()::getUrl('index'));
                 }),
 
             // 3. Approve Action (Visible if Pending with Me AND NO Next Actor)
@@ -84,7 +84,7 @@ class ViewTourClaim extends ViewRecord
                 ->action(function ($record, array $data, TourClaimWorkflow $workflow) {
                     $workflow->approve($record, $data['remarks']);
                     Notification::make()->title('Claim Approved!')->success()->send();
-                    $this->redirect($this->getResource()::getUrl('view', ['record' => $record]));
+                    $this->redirect($this->getResource()::getUrl('index'));
                 }),
 
             // 4. Raise Query Action (Always visible if Pending with Me)
@@ -99,7 +99,7 @@ class ViewTourClaim extends ViewRecord
                 ->action(function ($record, array $data, TourClaimWorkflow $workflow) {
                     $workflow->query($record, $data['query']);
                     Notification::make()->title('Claim returned to employee with a query.')->warning()->send();
-                    $this->redirect($this->getResource()::getUrl('view', ['record' => $record]));
+                    $this->redirect($this->getResource()::getUrl('index'));
                 }),
 
             // Edit Action (Visible for Draft or Query)

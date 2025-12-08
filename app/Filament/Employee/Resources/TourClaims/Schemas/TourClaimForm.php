@@ -92,6 +92,30 @@ class TourClaimForm
                     ])
                     ->columnSpanFull(),
 
+                // --- NEW: Display Query Reason if sent back ---
+                Section::make('Attention Required')
+                    ->schema([
+                        Textarea::make('query_reason')
+                            ->label('Reviewer Remarks / Query')
+                            ->disabled()
+                            ->dehydrated(false) 
+                            ->rows(3)
+                            // Use standard Tailwind text color for the input content
+                            ->extraInputAttributes(['class' => 'text-red-600 font-medium'])
+                            ->afterStateHydrated(fn ($component, $record) => $component->state($record?->remarks))
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn ($record) => $record && $record->current_state === 'query')
+                    ->icon('heroicon-m-exclamation-circle')
+                    ->iconColor('danger')
+                    ->extraAttributes([
+                        // Using 'style' guarantees the background works without recompiling assets
+                        'style' => 'background-color: #FEF2F2; border-left: 4px solid #EF4444;', 
+                        'class' => 'shadow-none', // Removes default card shadow for a flatter "alert" look
+                    ])
+                    ->collapsible(false)
+                    ->columnSpanFull(),
+
                 Section::make('Travel Details')
                     ->columns(2)
                     ->schema([
