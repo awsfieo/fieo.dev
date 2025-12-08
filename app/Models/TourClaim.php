@@ -105,9 +105,11 @@ class TourClaim extends Model
         return $this->pending_with === $user->employee?->employee_code;
     }
 
+    // Relationship to the claim items
     public function items(): HasMany
     {
-        return $this->hasMany(TourClaimItem::class, 'tour_claim_id');
+        // FIX: Explicitly sort by ID ascending (Oldest first)
+        return $this->hasMany(TourClaimItem::class, 'tour_claim_id')->orderBy('id', 'asc');
     }
 
     // if you need employee relation for scoping

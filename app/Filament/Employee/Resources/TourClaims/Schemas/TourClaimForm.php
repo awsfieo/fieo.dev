@@ -298,7 +298,7 @@ class TourClaimForm
                                     ->minValue(0)
                                     ->placeholder('0.00')
                                     ->suffix(fn(Get $get) => $get('advance_currency') === 'INR' ? 'INR' : 'Foreign')
-                                    ->default('0.00') // Changed default to 0 to avoid confusion on new claims
+                                    ->default('25000.00') // Changed default to 0 to avoid confusion on new claims
                                     ->dehydrated(true)
                                     // FIX: Populate amount from the correct DB column
                                     ->afterStateHydrated(function ($component, $record) {
@@ -322,9 +322,36 @@ class TourClaimForm
                             ->label('Items')
                             ->relationship('items')
                             ->default([])
-                            ->live()       // ADD THIS
-                            ->reactive()   // ADD THIS
+                            ->live()
+                            ->reactive()
                             ->columns(6)
+                            // --- FIX PART 1: Pack fields into payload_json before saving ---
+                            ->mutateRelationshipDataBeforeCreateUsing(function (array $data): array {
+                                $data['payload_json'] = [
+                                    'from_city'  => $data['from_city'] ?? null,
+                                    'to_city'    => $data['to_city'] ?? null,
+                                    'mode'       => $data['mode'] ?? null,
+                                    'hotel_name' => $data['hotel_name'] ?? null,
+                                    'nights'     => $data['nights'] ?? null,
+                                    'per_night'  => $data['per_night'] ?? null,
+                                ];
+                                // Remove these keys so Eloquent doesn't try to save them as columns
+                                unset($data['from_city'], $data['to_city'], $data['mode'], $data['hotel_name'], $data['nights'], $data['per_night']);
+                                return $data;
+                            })
+                            ->mutateRelationshipDataBeforeSaveUsing(function (array $data): array {
+                                // Logic is identical for updates
+                                $data['payload_json'] = [
+                                    'from_city'  => $data['from_city'] ?? null,
+                                    'to_city'    => $data['to_city'] ?? null,
+                                    'mode'       => $data['mode'] ?? null,
+                                    'hotel_name' => $data['hotel_name'] ?? null,
+                                    'nights'     => $data['nights'] ?? null,
+                                    'per_night'  => $data['per_night'] ?? null,
+                                ];
+                                unset($data['from_city'], $data['to_city'], $data['mode'], $data['hotel_name'], $data['nights'], $data['per_night']);
+                                return $data;
+                            })
                             ->schema([
                                 DatePicker::make('period_from')
                                     ->label('Date')
@@ -338,10 +365,6 @@ class TourClaimForm
                                         'stay'              => 'Stay',
                                         'local_conveyance'  => 'Local Conveyance',
                                         'misc'              => 'Miscellaneous',
-                                        // add more if you enable them in UI later:
-                                        // 'registration_fee' => 'Registration Fee',
-                                        // 'visa_fee'         => 'Visa Fee',
-                                        // 'insurance'        => 'Insurance',
                                     ])
                                     ->required()
                                     ->columnSpan(2)
@@ -392,8 +415,10 @@ class TourClaimForm
                                     ->required()
                                     ->columnSpan(4),
 
+                                // --- FIX PART 2: Enable dehydration & Load from payload_json ---
+
                                 Select::make('mode')
-                                    ->label('Mode of Transport')
+                                    ->label('Mode')
                                     ->options([
                                         'air'   => 'Air',
                                         'train' => 'Train',
@@ -401,44 +426,49 @@ class TourClaimForm
                                         'bus'   => 'Bus',
                                         'other' => 'Other',
                                     ])
-                                    ->dehydrated(false)
                                     ->visible(fn(Get $get) => $get('line_type') === 'travel')
-                                    ->columnSpan(2),
+                                    ->columnSpan(2)
+                                    ->dehydrated(true)
+                                    ->afterStateHydrated(fn($component, $record) => $component->state($record?->payload_json['mode'] ?? null)),
 
-                                // UI-only extras packed into payload_json
                                 TextInput::make('from_city')
                                     ->label('From')
-                                    ->dehydrated(false)
                                     ->visible(fn(Get $get) => $get('line_type') === 'travel')
-                                    ->columnSpan(2),
+                                    ->columnSpan(2)
+                                    ->dehydrated(true) // MUST be true to pass to mutation closure
+                                    ->afterStateHydrated(fn($component, $record) => $component->state($record?->payload_json['from_city'] ?? null)),
 
                                 TextInput::make('to_city')
                                     ->label('To')
-                                    ->dehydrated(false)
                                     ->visible(fn(Get $get) => $get('line_type') === 'travel')
-                                    ->columnSpan(2),
+                                    ->columnSpan(2)
+                                    ->dehydrated(true)
+                                    ->afterStateHydrated(fn($component, $record) => $component->state($record?->payload_json['to_city'] ?? null)),
 
                                 TextInput::make('hotel_name')
-                                    ->label('Hotel Name')
-                                    ->dehydrated(false)
+                                    ->label('Hotel')
                                     ->visible(fn(Get $get) => $get('line_type') === 'stay')
-                                    ->columnSpan(3),
+                                    ->columnSpan(3)
+                                    ->dehydrated(true)
+                                    ->afterStateHydrated(fn($component, $record) => $component->state($record?->payload_json['hotel_name'] ?? null)),
 
                                 TextInput::make('nights')
-                                    ->label('No. of Nights')
+                                    ->label('Nights')
                                     ->numeric()
                                     ->minValue(0)
-                                    ->dehydrated(false)
                                     ->visible(fn(Get $get) => $get('line_type') === 'stay')
-                                    ->columnSpan(1),
+                                    ->columnSpan(1)
+                                    ->dehydrated(true)
+                                    ->afterStateHydrated(fn($component, $record) => $component->state($record?->payload_json['nights'] ?? null)),
 
-                                // TextInput::make('per_night')
-                                //     ->label('Per Night')
-                                //     ->numeric()
-                                //     ->minValue(0)
-                                //     ->dehydrated(false)
-                                //     ->visible(fn(Get $get) => $get('line_type') === 'stay')
-                                //     ->columnSpan(2),
+                                TextInput::make('per_night')
+                                    ->label('Per Night')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->visible(fn(Get $get) => $get('line_type') === 'stay')
+                                    ->columnSpan(2)
+                                    ->dehydrated(true)
+                                    ->afterStateHydrated(fn($component, $record) => $component->state($record?->payload_json['per_night'] ?? null)),
 
                                 FileUpload::make('uploads')
                                     ->label('Attachments')
@@ -446,38 +476,27 @@ class TourClaimForm
                                     ->openable()
                                     ->downloadable()
                                     ->columnSpan(6)
-                                    ->disk('public') // Consider moving to 'private' for better security
+                                    ->disk('public')
                                     ->directory('tour-claims')
-
-                                    // --- SECURITY: ALLOWED FILE TYPES ---
                                     ->acceptedFileTypes([
-                                        // Safe Formats
                                         'application/pdf',
                                         'image/jpeg',
                                         'image/png',
                                         'image/webp',
-
-                                        // Word Documents
-                                        'application/msword',                                                      // .doc
-                                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-
-                                        // Excel Spreadsheets
-                                        'application/vnd.ms-excel',                                                // .xls
-                                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',       // .xlsx
+                                        'application/msword',
+                                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                        'application/vnd.ms-excel',
+                                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                                     ])
-
-                                    // 2. Strict Size Limit (e.g., 5MB)
-                                    ->maxSize(5120)
-                                    // The validation rule calls the ClamAV service over TCP port 3310
+                                    ->maxSize(5120) // 5 MB
                                     ->rules(['clamav'])
-
-                                    ->helperText('Allowed: PDF, JPG, PNG, DOCX, XLSX. Max: 5 MB.'),
+                                    ->helperText('Allowed: PDF, JPG, Word, Excel. Max size: 5 MB. Files are scanned for viruses.'),
                             ])
                     ])
                     ->columnSpanFull(),
 
                 // --- Totals / Settlement (UI) ---
-                Section::make('Totals (Auto)')
+                Section::make('Expenses Total (Auto)')
                     ->columns(2)
                     ->schema([
                         Placeholder::make('total_inr')
