@@ -853,6 +853,7 @@ class DatabaseSeeder extends Seeder
                             'to_date'       => null, // Ensure it's the active record
                         ],
                         [
+                            'employee_code' => $empCode,
                             'from_date'  => $now,
                             'created_at' => $now,
                             'updated_at' => $now,
@@ -891,6 +892,7 @@ class DatabaseSeeder extends Seeder
                         ],
                         [
                             'basic_pay'  => $basic,
+                            'employee_code' => $empCode,
                             'from_date'  => $now,
                             'remarks'    => 'Initial Import',
                             'created_at' => $now,

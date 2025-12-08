@@ -15,6 +15,7 @@ return new class extends Migration
             $table->foreignId('employee_id')->constrained('employees')->cascadeOnDelete();
             
             // The Pay Data
+            $table->string('employee_code')->nullable()->index(); 
             $table->decimal('basic_pay', 12, 2); 
             
             // History Tracking
