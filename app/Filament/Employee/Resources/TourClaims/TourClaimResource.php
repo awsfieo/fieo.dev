@@ -92,12 +92,22 @@ class TourClaimResource extends Resource
 
         $data['purpose_of_tour'] = $data['purpose_of_tour'] ?? ($data['event_name'] ?? '');
 
+        // FIX: Use createFromFormat with app timezone to ensure correct parsing
+        // This matches the logic we added to the Form Schema
         if (!empty($data['tour_start_date']) && !empty($data['tour_start_time'])) {
-            $data['dep_datetime'] = \Carbon\Carbon::parse($data['tour_start_date'] . ' ' . $data['tour_start_time']);
+            $data['dep_datetime'] = \Carbon\Carbon::createFromFormat(
+                'Y-m-d H:i', 
+                $data['tour_start_date'] . ' ' . $data['tour_start_time'], 
+                config('app.timezone')
+            );
         }
 
         if (!empty($data['tour_end_date']) && !empty($data['tour_end_time'])) {
-            $data['arr_datetime'] = \Carbon\Carbon::parse($data['tour_end_date'] . ' ' . $data['tour_end_time']);
+            $data['arr_datetime'] = \Carbon\Carbon::createFromFormat(
+                'Y-m-d H:i', 
+                $data['tour_end_date'] . ' ' . $data['tour_end_time'], 
+                config('app.timezone')
+            );
         }
 
         // advances from the toggle + amount
@@ -113,7 +123,6 @@ class TourClaimResource extends Resource
         ];
 
         unset($data['advance_amount']);
-        // Do not try to use $data['items'] here; relationship is handled separately.
         return $data;
     }
 }

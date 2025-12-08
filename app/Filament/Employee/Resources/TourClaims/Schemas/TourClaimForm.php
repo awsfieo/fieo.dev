@@ -44,42 +44,54 @@ class TourClaimForm
                     ->schema([
                         TextInput::make('employee_code')
                             ->label('Employee Code')
-                            ->default(fn() => Auth::user()?->employee?->employee_code ?? '')
                             ->disabled()
-                            ->dehydrated(true),
+                            ->dehydrated(true)
+                            // FIX: Load existing value if present
+                            ->afterStateHydrated(fn($component, $record) => $component->state($record?->employee_code ?? Auth::user()?->employee?->employee_code))
+                            ->default(fn() => Auth::user()?->employee?->employee_code),
 
                         TextInput::make('employee_name')
                             ->label('Employee Name')
-                            ->default(fn() => Auth::user()?->employee?->name ?? Auth::user()?->name ?? '')
                             ->disabled()
-                            ->dehydrated(false),
+                            ->dehydrated(false)
+                            // FIX: Load from relationship
+                            ->afterStateHydrated(fn($component, $record) => $component->state($record?->employee?->name ?? Auth::user()?->employee?->name))
+                            ->default(fn() => Auth::user()?->employee?->name),
 
                         TextInput::make('designation')
                             ->label('Designation')
-                            ->default(fn() => Auth::user()?->employee?->designation?->designation ?? '')
                             ->disabled()
-                            ->dehydrated(false),
+                            ->dehydrated(false)
+                            // FIX: Load from relationship
+                            ->afterStateHydrated(fn($component, $record) => $component->state($record?->employee?->designation?->designation ?? Auth::user()?->employee?->designation?->designation))
+                            ->default(fn() => Auth::user()?->employee?->designation?->designation),
 
                         TextInput::make('department')
                             ->label('Department')
-                            ->default(fn() => Auth::user()?->employee?->department?->department ?? '')
                             ->disabled()
-                            ->dehydrated(false),
+                            ->dehydrated(false)
+                            // FIX: Load from relationship
+                            ->afterStateHydrated(fn($component, $record) => $component->state($record?->employee?->department?->department ?? Auth::user()?->employee?->department?->department))
+                            ->default(fn() => Auth::user()?->employee?->department?->department),
 
                         TextInput::make('office')
                             ->label('Office')
-                            ->default(fn() => Auth::user()?->employee?->office?->office ?? '')
                             ->disabled()
-                            ->dehydrated(false),
+                            ->dehydrated(false)
+                            // FIX: Load from relationship
+                            ->afterStateHydrated(fn($component, $record) => $component->state($record?->employee?->office?->office ?? Auth::user()?->employee?->office?->office))
+                            ->default(fn() => Auth::user()?->employee?->office?->office),
+
                         TextInput::make('basic')
                             ->label('Basic Pay')
-                            ->default(fn() => Auth::user()?->employee?->basic ?? '')
                             ->disabled()
-                            ->dehydrated(true),
+                            ->dehydrated(true)
+                            // FIX: Load from relationship
+                            ->afterStateHydrated(fn($component, $record) => $component->state($record?->employee?->basic ?? Auth::user()?->employee?->basic))
+                            ->default(fn() => Auth::user()?->employee?->basic),
                     ])
                     ->columnSpanFull(),
 
-                // --- Travel header ---
                 Section::make('Travel Details')
                     ->columns(2)
                     ->schema([
@@ -101,19 +113,29 @@ class TourClaimForm
                         TextInput::make('posting_city')
                             ->label('Posting City')
                             ->helperText('Prefilled - Change, if needed')
-                            ->default(fn() => Auth::user()?->employee?->office?->city ?? null),
+                            // FIX: Load from relationship if record exists
+                            ->afterStateHydrated(fn($component, $record) => $component->state($record?->employee?->office?->city ?? Auth::user()?->employee?->office?->city))
+                            ->default(fn() => Auth::user()?->employee?->office?->city),
 
+                        // --- DEPARTURE HYDRATION ---
                         DatePicker::make('tour_start_date')
                             ->label('Departure Date')
                             ->required()
                             ->live()
+                            // FIX: Extract Date from dep_datetime
+                            ->afterStateHydrated(function ($component, $record) {
+                                if ($record?->dep_datetime) {
+                                    $component->state($record->dep_datetime->toDateString());
+                                }
+                            })
                             ->default(now())
+                            // ... (Keep your existing afterStateUpdated logic here) ...
                             ->afterStateUpdated(function ($state, callable $set, Get $get) {
                                 $date = $state;
                                 $time = $get('tour_start_time');
-
                                 if ($date && $time) {
-                                    $set('dep_datetime', Carbon::parse("$date $time"));
+                                    $dt = Carbon::createFromFormat('Y-m-d H:i', "$date $time", config('app.timezone'));
+                                    $set('dep_datetime', $dt->toIso8601String());
                                 } else {
                                     $set('dep_datetime', null);
                                 }
@@ -124,29 +146,44 @@ class TourClaimForm
                             ->seconds(false)
                             ->required()
                             ->live()
+                            // FIX: Extract Time from dep_datetime
+                            ->afterStateHydrated(function ($component, $record) {
+                                if ($record?->dep_datetime) {
+                                    $component->state($record->dep_datetime->format('H:i'));
+                                }
+                            })
                             ->default(now()->format('H:i'))
+                            // ... (Keep your existing afterStateUpdated logic here) ...
                             ->afterStateUpdated(function ($state, callable $set, Get $get) {
                                 $time = $state;
                                 $date = $get('tour_start_date');
-
                                 if ($date && $time) {
-                                    $set('dep_datetime', Carbon::parse("$date $time"));
+                                    $dt = Carbon::createFromFormat('Y-m-d H:i', "$date $time", config('app.timezone'));
+                                    $set('dep_datetime', $dt->toIso8601String());
                                 } else {
                                     $set('dep_datetime', null);
                                 }
                             }),
 
+                        // --- ARRIVAL HYDRATION ---
                         DatePicker::make('tour_end_date')
                             ->label('Arrival Date')
                             ->required()
                             ->live()
+                            // FIX: Extract Date from arr_datetime
+                            ->afterStateHydrated(function ($component, $record) {
+                                if ($record?->arr_datetime) {
+                                    $component->state($record->arr_datetime->toDateString());
+                                }
+                            })
                             ->default(now())
+                            // ... (Keep your existing afterStateUpdated logic here) ...
                             ->afterStateUpdated(function ($state, callable $set, Get $get) {
                                 $date = $state;
                                 $time = $get('tour_end_time');
-
                                 if ($date && $time) {
-                                    $set('arr_datetime', Carbon::parse("$date $time"));
+                                    $dt = Carbon::createFromFormat('Y-m-d H:i', "$date $time", config('app.timezone'));
+                                    $set('arr_datetime', $dt->toIso8601String());
                                 } else {
                                     $set('arr_datetime', null);
                                 }
@@ -157,18 +194,24 @@ class TourClaimForm
                             ->seconds(false)
                             ->required()
                             ->live()
+                            // FIX: Extract Time from arr_datetime
+                            ->afterStateHydrated(function ($component, $record) {
+                                if ($record?->arr_datetime) {
+                                    $component->state($record->arr_datetime->format('H:i'));
+                                }
+                            })
                             ->default(now()->format('H:i'))
+                            // ... (Keep your existing afterStateUpdated logic here) ...
                             ->afterStateUpdated(function ($state, callable $set, Get $get) {
                                 $time = $state;
                                 $date = $get('tour_end_date');
-
                                 if ($date && $time) {
-                                    $set('arr_datetime', Carbon::parse("$date $time"));
+                                    $dt = Carbon::createFromFormat('Y-m-d H:i', "$date $time", config('app.timezone'));
+                                    $set('arr_datetime', $dt->toIso8601String());
                                 } else {
                                     $set('arr_datetime', null);
                                 }
                             }),
-
 
                         TextInput::make('place_of_tour')
                             ->label('Place of Tour')
@@ -236,7 +279,18 @@ class TourClaimForm
                                     ])
                                     ->inline()
                                     ->default('INR')
-                                    ->live(),
+                                    ->live()
+                                    // FIX: Determine currency based on which DB column has a value
+                                    ->afterStateHydrated(function ($component, $record) {
+                                        if (!$record) return;
+
+                                        // If forex has value > 0, set currency to FOREIGN, else INR
+                                        if ((float) $record->advance_forex > 0) {
+                                            $component->state('FOREIGN');
+                                        } else {
+                                            $component->state('INR');
+                                        }
+                                    }),
 
                                 TextInput::make('advance_amount')
                                     ->label('Advance Amount')
@@ -244,8 +298,19 @@ class TourClaimForm
                                     ->minValue(0)
                                     ->placeholder('0.00')
                                     ->suffix(fn(Get $get) => $get('advance_currency') === 'INR' ? 'INR' : 'Foreign')
-                                    ->default('25000.00')
-                                    ->dehydrated(true),
+                                    ->default('0.00') // Changed default to 0 to avoid confusion on new claims
+                                    ->dehydrated(true)
+                                    // FIX: Populate amount from the correct DB column
+                                    ->afterStateHydrated(function ($component, $record) {
+                                        if (!$record) return;
+
+                                        // Load the value from either forex or inr column
+                                        $amount = (float) $record->advance_forex > 0
+                                            ? $record->advance_forex
+                                            : $record->advance_inr;
+
+                                        $component->state($amount);
+                                    }),
                             ]),
                     ])
                     ->columnSpan(1),
@@ -271,9 +336,8 @@ class TourClaimForm
                                     ->options([
                                         'travel'            => 'Travel',
                                         'stay'              => 'Stay',
-                                        'da'                => 'DA',
-                                        'local_conveyance'  => 'Local',
-                                        'misc'              => 'Misc',
+                                        'local_conveyance'  => 'Local Conveyance',
+                                        'misc'              => 'Miscellaneous',
                                         // add more if you enable them in UI later:
                                         // 'registration_fee' => 'Registration Fee',
                                         // 'visa_fee'         => 'Visa Fee',
@@ -328,6 +392,19 @@ class TourClaimForm
                                     ->required()
                                     ->columnSpan(4),
 
+                                Select::make('mode')
+                                    ->label('Mode of Transport')
+                                    ->options([
+                                        'air'   => 'Air',
+                                        'train' => 'Train',
+                                        'taxi'  => 'Taxi',
+                                        'bus'   => 'Bus',
+                                        'other' => 'Other',
+                                    ])
+                                    ->dehydrated(false)
+                                    ->visible(fn(Get $get) => $get('line_type') === 'travel')
+                                    ->columnSpan(2),
+
                                 // UI-only extras packed into payload_json
                                 TextInput::make('from_city')
                                     ->label('From')
@@ -341,40 +418,27 @@ class TourClaimForm
                                     ->visible(fn(Get $get) => $get('line_type') === 'travel')
                                     ->columnSpan(2),
 
-                                Select::make('mode')
-                                    ->label('Mode')
-                                    ->options([
-                                        'air'   => 'Air',
-                                        'train' => 'Train',
-                                        'taxi'  => 'Taxi',
-                                        'bus'   => 'Bus',
-                                        'other' => 'Other',
-                                    ])
-                                    ->dehydrated(false)
-                                    ->visible(fn(Get $get) => $get('line_type') === 'travel')
-                                    ->columnSpan(2),
-
                                 TextInput::make('hotel_name')
-                                    ->label('Hotel')
+                                    ->label('Hotel Name')
                                     ->dehydrated(false)
                                     ->visible(fn(Get $get) => $get('line_type') === 'stay')
                                     ->columnSpan(3),
 
                                 TextInput::make('nights')
-                                    ->label('Nights')
+                                    ->label('No. of Nights')
                                     ->numeric()
                                     ->minValue(0)
                                     ->dehydrated(false)
                                     ->visible(fn(Get $get) => $get('line_type') === 'stay')
                                     ->columnSpan(1),
 
-                                TextInput::make('per_night')
-                                    ->label('Per Night')
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->dehydrated(false)
-                                    ->visible(fn(Get $get) => $get('line_type') === 'stay')
-                                    ->columnSpan(2),
+                                // TextInput::make('per_night')
+                                //     ->label('Per Night')
+                                //     ->numeric()
+                                //     ->minValue(0)
+                                //     ->dehydrated(false)
+                                //     ->visible(fn(Get $get) => $get('line_type') === 'stay')
+                                //     ->columnSpan(2),
 
                                 FileUpload::make('uploads')
                                     ->label('Attachments')
@@ -382,8 +446,32 @@ class TourClaimForm
                                     ->openable()
                                     ->downloadable()
                                     ->columnSpan(6)
-                                    ->disk('public')
-                                    ->directory('tour-claims'),
+                                    ->disk('public') // Consider moving to 'private' for better security
+                                    ->directory('tour-claims')
+
+                                    // --- SECURITY: ALLOWED FILE TYPES ---
+                                    ->acceptedFileTypes([
+                                        // Safe Formats
+                                        'application/pdf',
+                                        'image/jpeg',
+                                        'image/png',
+                                        'image/webp',
+
+                                        // Word Documents
+                                        'application/msword',                                                      // .doc
+                                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+
+                                        // Excel Spreadsheets
+                                        'application/vnd.ms-excel',                                                // .xls
+                                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',       // .xlsx
+                                    ])
+
+                                    // 2. Strict Size Limit (e.g., 5MB)
+                                    ->maxSize(5120)
+                                    // The validation rule calls the ClamAV service over TCP port 3310
+                                    ->rules(['clamav'])
+
+                                    ->helperText('Allowed: PDF, JPG, PNG, DOCX, XLSX. Max: 5 MB.'),
                             ])
                     ])
                     ->columnSpanFull(),
@@ -471,12 +559,24 @@ class TourClaimForm
                                 'yes' => 'Provided',
                             ])
                             ->inline()
-                            ->live(),
+                            ->live()
+                            // FIX: Read from payload_json
+                            ->afterStateHydrated(function ($component, $record) {
+                                if ($record && isset($record->payload_json['meals_provided'])) {
+                                    $component->state($record->payload_json['meals_provided']);
+                                }
+                            }),
 
                         Repeater::make('meals_provided_details')
                             ->label('If yes, give details')
                             ->visible(fn(Get $get) => $get('meals_provided') === 'yes')
                             ->columns(3)
+                            // FIX: Read from payload_json
+                            ->afterStateHydrated(function ($component, $record) {
+                                if ($record && isset($record->payload_json['meals_details'])) {
+                                    $component->state($record->payload_json['meals_details']);
+                                }
+                            })
                             ->schema([
                                 DatePicker::make('date')
                                     ->label('Date')
@@ -490,7 +590,6 @@ class TourClaimForm
                                 Checkbox::make('dinner')
                                     ->label('Dinner')
                                     ->columnSpan(1),
-
                             ]),
                     ])
                     ->columnSpanFull(),
