@@ -179,31 +179,39 @@ class TourClaimWorkflow
 
     public function approve(TourClaim $claim, string $remarks): void
     {
-        // 1. Generate Sanction Order Number (Simple Logic)
-        // Format: SO/FY-YEAR/ID (e.g., SO/24-25/105)
+        $currentUser = Auth::user();
+        $isRegionalHead = $currentUser->hasRole('Regional Head');
+
+        // 1. Generate Sanction Order Number
         $fy = date('y') . '-' . (date('y') + 1);
         $sanctionNo = 'SO/' . $fy . '/' . str_pad($claim->id, 4, '0', STR_PAD_LEFT);
 
-        // 2. Find the Accounts Person responsible for payment
-        // Usually, this goes back to the Accounts Executive who started it, or HO Accounts
-        $accountsRole = $claim->employee->office->type === 'HO' ? 'Accounts Executive HO' : 'Accounts Executive';
-        $accountsPerson = $this->findGenericRoleInScope($accountsRole, region: $claim->employee->department->region);
+        // 2. Determine Payer (Settlement Authority)
+        if ($isRegionalHead) {
+            // Case A: Approved by Regional Head -> Goes to Regional Accounts Executive
+            // Note: We use the CLAIMANT's region to find their local accounts person
+            $region = $claim->employee->department->region ?? 'HO';
+            $accountsPerson = $this->findGenericRoleInScope('Accounts Executive', region: $region);
+        } else {
+            // Case B: Approved by HOD Finance or DG -> Goes to Accounts Executive HO
+            $accountsPerson = $this->findSpecificRole('Accounts Executive HO');
+        }
 
-        // Fallback: If no regional accounts, send to HO
+        // Fallback: If for some reason Regional Accounts doesn't exist, send to HO
         if (!$accountsPerson) {
             $accountsPerson = $this->findSpecificRole('Accounts Executive HO');
         }
 
-        // 3. Update State -> 'approved' but PENDING with Accounts
+        // 3. Update State
         $claim->update([
-            'current_state'     => 'approved', // Status is approved
+            'current_state'     => 'approved',
             'sanction_order_no' => $sanctionNo,
-            'pending_with'      => $accountsPerson?->employee_code, // Assigned to Accounts for payment
+            'pending_with'      => $accountsPerson?->employee_code, 
             'remarks'           => $remarks,
             'file_history'      => $this->appendHistory(
                 $claim, 
                 'Approved', 
-                "Sanction Order $sanctionNo Issued. Forwarded to Accounts for Settlement. Note: $remarks", 
+                "Sanction Order $sanctionNo Issued. Forwarded to " . ($accountsPerson?->name ?? 'Accounts') . " for Settlement. Note: $remarks", 
                 Auth::user()->employee,
                 $accountsPerson?->employee_code
             ),
