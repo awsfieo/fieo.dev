@@ -519,6 +519,51 @@ class TourClaimForm
                     ])
                     ->columnSpanFull(),
 
+                Section::make('Meals Provided by Organisers')
+                    ->columns(2)
+                    ->schema([
+                        Radio::make('meals_provided')
+                            ->label('Were meals provided?')
+                            ->options([
+                                'no'  => 'Not Provided',
+                                'yes' => 'Provided',
+                            ])
+                            ->inline()
+                            ->live()
+                            // FIX: Read from payload_json
+                            ->afterStateHydrated(function ($component, $record) {
+                                if ($record && isset($record->payload_json['meals_provided'])) {
+                                    $component->state($record->payload_json['meals_provided']);
+                                }
+                            }),
+
+                        Repeater::make('meals_provided_details')
+                            ->label('If yes, give details')
+                            ->visible(fn(Get $get) => $get('meals_provided') === 'yes')
+                            ->columns(3)
+                            // FIX: Read from payload_json
+                            ->afterStateHydrated(function ($component, $record) {
+                                if ($record && isset($record->payload_json['meals_details'])) {
+                                    $component->state($record->payload_json['meals_details']);
+                                }
+                            })
+                            ->schema([
+                                DatePicker::make('date')
+                                    ->label('Date')
+                                    ->required()
+                                    ->columnSpan(1),
+
+                                Checkbox::make('lunch')
+                                    ->label('Lunch')
+                                    ->columnSpan(1),
+
+                                Checkbox::make('dinner')
+                                    ->label('Dinner')
+                                    ->columnSpan(1),
+                            ]),
+                    ])
+                    ->columnSpanFull(),
+
                 // --- Totals / Settlement (UI) ---
                 Section::make('Expenses Total (Auto)')
                     ->columns(2)
@@ -592,50 +637,6 @@ class TourClaimForm
                     ])
                     ->columnSpanFull(),
 
-                Section::make('Meals Provided by Organisers')
-                    ->columns(2)
-                    ->schema([
-                        Radio::make('meals_provided')
-                            ->label('Were meals provided?')
-                            ->options([
-                                'no'  => 'Not Provided',
-                                'yes' => 'Provided',
-                            ])
-                            ->inline()
-                            ->live()
-                            // FIX: Read from payload_json
-                            ->afterStateHydrated(function ($component, $record) {
-                                if ($record && isset($record->payload_json['meals_provided'])) {
-                                    $component->state($record->payload_json['meals_provided']);
-                                }
-                            }),
-
-                        Repeater::make('meals_provided_details')
-                            ->label('If yes, give details')
-                            ->visible(fn(Get $get) => $get('meals_provided') === 'yes')
-                            ->columns(3)
-                            // FIX: Read from payload_json
-                            ->afterStateHydrated(function ($component, $record) {
-                                if ($record && isset($record->payload_json['meals_details'])) {
-                                    $component->state($record->payload_json['meals_details']);
-                                }
-                            })
-                            ->schema([
-                                DatePicker::make('date')
-                                    ->label('Date')
-                                    ->required()
-                                    ->columnSpan(1),
-
-                                Checkbox::make('lunch')
-                                    ->label('Lunch')
-                                    ->columnSpan(1),
-
-                                Checkbox::make('dinner')
-                                    ->label('Dinner')
-                                    ->columnSpan(1),
-                            ]),
-                    ])
-                    ->columnSpanFull(),
 
                 // --- NEW: Application History Section ---
                 Section::make('Application History')
