@@ -17,32 +17,33 @@ class EditAppraisal extends EditRecord
     {
         return [
             // 1. SUBMIT ACTION (For Employee)
-            // Only visible if status is 'draft' AND user is the owner
             Actions\Action::make('submit')
                 ->label('Submit Appraisal')
                 ->color('success')
                 ->icon('heroicon-o-paper-airplane')
-                ->visible(fn ($record) => 
-                    $record->status === 'draft' && 
-                    $record->employee_code === Auth::user()->employee?->employee_code
-                )
+                // FIX: Relaxed visibility check
+                ->visible(function ($record) {
+                    // Check 1: Must be draft
+                    $isDraft = $record->status === 'draft';
+                    
+                    // Check 2: Must be the owner
+                    // We compare IDs to be safer than string codes
+                    $isOwner = $record->employee_id === Auth::user()->employee?->id;
+
+                    return $isDraft && $isOwner;
+                })
                 ->requiresConfirmation()
                 ->modalHeading('Submit Appraisal?')
-                ->modalDescription('Once submitted, you will not be able to edit this form. It will be forwarded to your Reporting Officer.')
+                ->modalDescription('Once submitted, you cannot edit this form. It will be forwarded to your Reporting Officer.')
                 ->action(function (AppraisalWorkflow $workflow) {
-                    // 1. Save any pending changes
-                    $this->save(); 
-                    
-                    // 2. Trigger Workflow
+                    $this->save(); // Save data first
                     $workflow->submit($this->getRecord());
-
-                    // 3. Notify & Redirect
-                    Notification::make()->title('Appraisal Submitted Successfully')->success()->send();
+                    
+                    Notification::make()->title('Appraisal Submitted')->success()->send();
                     $this->redirect($this->getResource()::getUrl('index'));
                 }),
 
-            // 2. ASSESS ACTION (For Reporting Officer - HOD/Chapter Head)
-            // Visible if status is 'submitted' AND 'pending_with' matches current user
+            // 2. ASSESS ACTION (For Reporting Officer)
             Actions\Action::make('submit_assessment')
                 ->label('Submit Assessment')
                 ->color('warning')
@@ -52,12 +53,9 @@ class EditAppraisal extends EditRecord
                     $record->pending_with === Auth::user()->employee?->employee_code
                 )
                 ->requiresConfirmation()
-                ->modalHeading('Submit Common Evaluation?')
-                ->modalDescription('This assessment will be forwarded to the next authority.')
                 ->action(function (AppraisalWorkflow $workflow) {
                     $this->save();
                     $workflow->assess($this->getRecord());
-                    
                     Notification::make()->title('Assessment Submitted')->success()->send();
                     $this->redirect($this->getResource()::getUrl('index'));
                 }),

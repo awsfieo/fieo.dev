@@ -60,7 +60,8 @@ class AppraisalForm
                         TextInput::make('employee_name')
                             ->label('Name')
                             ->dehydrated(false)
-                            ->default(fn() => Auth::user()->name)
+                            // FIX: Load from relationship if record exists, else use Auth user
+                            ->afterStateHydrated(fn($component, $record) => $component->state($record?->employee?->name ?? Auth::user()->employee?->name))
                             ->disabled(),
 
                         TextInput::make('designation_name')
