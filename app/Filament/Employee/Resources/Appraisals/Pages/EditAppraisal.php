@@ -7,6 +7,7 @@ use App\Services\AppraisalWorkflow;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
 
 class EditAppraisal extends EditRecord
 {
@@ -16,23 +17,44 @@ class EditAppraisal extends EditRecord
     {
         return [
             Actions\ViewAction::make(),
-            Actions\DeleteAction::make(),
+            // Actions\DeleteAction::make(), // <--- REMOVED: No one should delete an active appraisal
             
-            // Optional: Manager quick-submit from Edit page
-            Actions\Action::make('save_and_submit_assessment')
+            // 1. Submit Action (For Reporting Officer / Managers)
+            Actions\Action::make('submit_assessment')
                 ->label('Submit Assessment')
                 ->color('success')
+                ->icon('heroicon-m-check-circle')
+                // Visible only if status is NOT draft (meaning it's in review) AND user is the pending actor
                 ->visible(fn ($record) => 
-                    $record->status === 'submitted' && 
-                    $record->pending_with === \Illuminate\Support\Facades\Auth::user()->employee?->employee_code
+                    $record->status !== 'draft' && 
+                    $record->status !== 'closed' &&
+                    $record->pending_with === Auth::user()->employee?->employee_code
                 )
                 ->requiresConfirmation()
+                ->modalHeading('Submit Assessment')
+                ->modalDescription('This will finalize your evaluation and forward the appraisal to the next authority. You cannot edit it afterwards.')
                 ->action(function (AppraisalWorkflow $workflow) {
-                    $this->save();
+                    // Save current data first
+                    $this->save(); 
+                    
+                    // Trigger Workflow
                     $workflow->assess($this->getRecord());
+                    
                     Notification::make()->title('Assessment Submitted')->success()->send();
                     $this->redirect($this->getResource()::getUrl('index'));
                 }),
+        ];
+    }
+
+    // 2. Customize the Bottom "Save" Button to avoid confusion
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getSaveFormAction()
+                ->label('Save Draft') // Renamed from "Save"
+                ->submit('save'),
+                
+            $this->getCancelFormAction(),
         ];
     }
 
