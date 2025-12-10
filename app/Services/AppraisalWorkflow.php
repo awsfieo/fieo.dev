@@ -102,21 +102,28 @@ class AppraisalWorkflow
     public function determineReportingOfficer(Appraisal $appraisal): ?Employee
     {
         $employee = $appraisal->employee;
-        $officeType = $employee->office?->type; // HO, RO, CO (Chapter)
+        $department = $employee->department;
 
-        // 1. If Employee is in a CHAPTER OFFICE -> Goes to Chapter Head
-        if ($officeType === 'CO' || str_contains(strtolower($employee->office?->office ?? ''), 'chapter')) {
-            // Find the Chapter Head of this specific office
+        // CRITICAL FIX: Determine workflow based on Department Type/Region, NOT Office ID.
+        // This mirrors the logic in TourClaimWorkflow.
+        $region = $department?->region; // e.g., 'WR', 'NR', 'SR'
+        $deptType = $department?->type; // e.g., 'RO', 'CO', 'HO'
+
+        // 1. If Employee is in a CHAPTER OFFICE (CO) -> Goes to Chapter Head
+        if ($deptType === 'CO' || str_contains(strtolower($employee->office?->office ?? ''), 'chapter')) {
+            // Note: Chapter Heads are still typically found by Office ID, 
+            // but if you want strict department logic, ensure Chapter Heads have a distinct Department Role.
+            // For now, we keep Office ID for Chapter Heads ONLY as per TourClaimWorkflow pattern.
             return $this->findRoleInScope('Chapter Head', officeId: $employee->office_id);
         }
 
-        // 2. If Employee is in REGIONAL OFFICE -> Goes to Regional Head
-        if ($officeType === 'RO' || str_contains(strtolower($employee->office?->office ?? ''), 'regional')) {
-            return $this->findRoleInScope('Regional Head', officeId: $employee->office_id);
+        // 2. If Employee is in REGIONAL OFFICE (RO) -> Goes to Regional Head
+        // FIX: We now use the REGION string to find the Regional Head.
+        if ($deptType === 'RO' || str_contains(strtolower($employee->office?->office ?? ''), 'regional')) {
+            return $this->findRoleInScope('Regional Head', region: $region);
         }
 
-        // 3. If Employee is in HEAD OFFICE -> Goes to HOD
-        // We look for the HOD of the employee's department
+        // 3. If Employee is in HEAD OFFICE (HO) -> Goes to HOD
         return $this->findRoleInScope('HOD', deptId: $employee->department_id);
     }
 
@@ -140,17 +147,28 @@ class AppraisalWorkflow
 
     private function findRoleInScope(string $role, ?int $officeId = null, ?int $deptId = null, ?string $region = null): ?Employee
     {
+        // Retrieve all users with the required Role
         $users = User::role($role)->get();
 
         foreach ($users as $user) {
             $emp = $user->employee;
             if (!$emp) continue;
 
-            if ($officeId && $emp->office_id === $officeId) return $emp;
-            if ($deptId && $emp->department_id === $deptId) return $emp;
-            
-            // For Regional Heads, match by Region (NR, SR, etc.)
-            if ($region && ($emp->department?->region === $region)) return $emp;
+            // Priority 1: Match by Region (Critical for Regional Heads)
+            // Checks if the Regional Head's department region matches the target region (e.g., 'WR')
+            if ($region && ($emp->department?->region === $region)) {
+                return $emp;
+            }
+
+            // Priority 2: Match by Department ID (For HODs)
+            if ($deptId && $emp->department_id === $deptId) {
+                return $emp;
+            }
+
+            // Priority 3: Match by Office ID (For Chapter Heads)
+            if ($officeId && $emp->office_id === $officeId) {
+                return $emp;
+            }
         }
         
         return null;

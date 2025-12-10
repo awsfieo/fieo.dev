@@ -17,7 +17,7 @@ class AppraisalsTable
                 TextColumn::make('application_no')
                     ->searchable()
                     ->sortable(),
-                    // ->weight('bold'),
+                // ->weight('bold'),
 
                 TextColumn::make('employee.name')
                     ->label('Employee')
@@ -34,7 +34,7 @@ class AppraisalsTable
 
                 TextColumn::make('status')
                     ->badge()
-                    ->color(fn ($record) => $record->status_color),
+                    ->color(fn($record) => $record->status_color),
 
                 // TextColumn::make('pendingWith.name')
                 //     ->label('Pending With')
@@ -46,8 +46,8 @@ class AppraisalsTable
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make()
-                    ->label(fn($record) => $record->status === 'draft' ? 'Edit' : 'Edit')
-                    ->color(fn($record) => $record->status === 'draft' ? 'primary' : 'warning'),
+                    // Only show the Edit button if the status is 'draft'
+                    ->visible(fn($record) => $record->status === 'draft'),
             ]);
     }
 }

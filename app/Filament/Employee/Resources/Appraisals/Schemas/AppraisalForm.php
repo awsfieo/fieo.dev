@@ -5,7 +5,7 @@ namespace App\Filament\Employee\Resources\Appraisals\Schemas;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\ToggleButtons;
@@ -88,7 +88,7 @@ class AppraisalForm
                             ->dehydrated(false)
                             ->afterStateHydrated(fn($component, $record) => $component->state($record?->basic ?? Auth::user()->employee?->basic))
                             ->disabled(),
-                            
+
                         // Hidden ID to ensure relationship saves
                         Hidden::make('employee_id')->default(fn() => Auth::user()->employee?->id),
                     ])->columnSpanFull(),
@@ -100,7 +100,7 @@ class AppraisalForm
                     ->disabled(function ($record) {
                         // If creating new, allow edit
                         if (! $record) return false;
-                        
+
                         // If status is NOT draft, disable it
                         if ($record->status !== 'draft') return true;
 
@@ -111,9 +111,8 @@ class AppraisalForm
                         return false;
                     })
                     ->schema([
-                        Textarea::make('appraisal_form_data.job_profile')
+                        RichEditor::make('appraisal_form_data.job_profile')
                             ->label('1. Define your job profile')
-                            ->rows(3)
                             ->required(),
 
                         ToggleButtons::make('appraisal_form_data.satisfaction')
@@ -127,26 +126,22 @@ class AppraisalForm
                             ->inline()
                             ->required(),
 
-                        Textarea::make('appraisal_form_data.profile_modifications')
-                            ->label('3. What can be modified in your job profile?')
-                            ->rows(2),
+                        RichEditor::make('appraisal_form_data.profile_modifications')
+                            ->label('3. What can be modified in your job profile?'),
 
-                        Textarea::make('appraisal_form_data.achievements')
+                        RichEditor::make('appraisal_form_data.achievements')
                             ->label('4. Achievements during review period')
-                            ->rows(4)
+
                             ->required(),
 
-                        Textarea::make('appraisal_form_data.performance_gaps')
-                            ->label('5. Areas for improvement & support required')
-                            ->rows(2),
+                        RichEditor::make('appraisal_form_data.performance_gaps')
+                            ->label('5. Areas for improvement & support required'),
 
-                        Textarea::make('appraisal_form_data.career_goals')
-                            ->label('6. Medium to long-term career goals')
-                            ->rows(2),
+                        RichEditor::make('appraisal_form_data.career_goals')
+                            ->label('6. Medium to long-term career goals'),
 
-                        Textarea::make('appraisal_form_data.training_needs')
-                            ->label('7. Specific training/mentoring required')
-                            ->rows(2),
+                        RichEditor::make('appraisal_form_data.training_needs')
+                            ->label('7. Specific training/mentoring required'),
                     ])->columnSpanFull(),
 
                 // --- 3. COMMON EVALUATION (Part B) ---
@@ -167,17 +162,14 @@ class AppraisalForm
                             ->options(['Yes' => 'Yes', 'No' => 'No'])
                             ->required(),
 
-                        Textarea::make('common_evaluation_data.competency_comparison')
-                            ->label('Job Competencies vis-a-vis others')
-                            ->rows(2),
+                        RichEditor::make('common_evaluation_data.competency_comparison')
+                            ->label('Job Competencies vis-a-vis others'),
 
-                        Textarea::make('common_evaluation_data.initiative')
-                            ->label('Drive to take initiative and innovation')
-                            ->rows(2),
+                        RichEditor::make('common_evaluation_data.initiative')
+                            ->label('Drive to take initiative and innovation'),
 
-                        Textarea::make('common_evaluation_data.accomplishments')
-                            ->label('Outstanding accomplishments')
-                            ->rows(2),
+                        RichEditor::make('common_evaluation_data.accomplishments')
+                            ->label('Outstanding accomplishments'),
 
                         Section::make('Core Competencies Rating (1-5)')
                             ->columns(2)
@@ -194,9 +186,8 @@ class AppraisalForm
                                 self::rating('planning', 'Planning & Time Management'),
                             ]),
 
-                        Textarea::make('common_evaluation_data.overall_assessment')
+                        RichEditor::make('common_evaluation_data.overall_assessment')
                             ->label('Overall Assessment')
-                            ->rows(3)
                             ->required(),
                     ])->columnSpanFull(),
 
@@ -219,9 +210,8 @@ class AppraisalForm
                             ->options(['Yes' => 'Yes', 'No' => 'No'])
                             ->required(),
 
-                        Textarea::make('regional_head_assessment_data.comments')
-                            ->label('Comments')
-                            ->rows(3),
+                        RichEditor::make('regional_head_assessment_data.comments')
+                            ->label('Comments'),
                     ])->columnSpanFull(),
 
                 // --- 5. FINAL ASSESSMENT (DG & CEO) ---
@@ -237,7 +227,7 @@ class AppraisalForm
                             ->options(['Yes' => 'Yes', 'No' => 'No'])
                             ->required(),
 
-                        Textarea::make('final_assessment_data.disagreement_details')
+                        RichEditor::make('final_assessment_data.disagreement_details')
                             ->label('Details of disagreement (if any)')
                             ->visible(fn(Get $get) => $get('final_assessment_data.agree_with_evaluation') === 'No'),
 
