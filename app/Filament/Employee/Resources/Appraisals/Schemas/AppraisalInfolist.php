@@ -2,9 +2,11 @@
 
 namespace App\Filament\Employee\Resources\Appraisals\Schemas;
 
-use Filament\Infolists\Components\IconEntry;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\Grid;
+use Illuminate\Support\Facades\Auth;
 
 class AppraisalInfolist
 {
@@ -12,60 +14,79 @@ class AppraisalInfolist
     {
         return $schema
             ->components([
-                TextEntry::make('application_no'),
-                TextEntry::make('employee.name')
-                    ->label('Employee'),
-                TextEntry::make('employee_code'),
-                TextEntry::make('designation.id')
-                    ->label('Designation')
-                    ->placeholder('-'),
-                TextEntry::make('department.id')
-                    ->label('Department')
-                    ->placeholder('-'),
-                TextEntry::make('office.id')
-                    ->label('Office')
-                    ->placeholder('-'),
-                TextEntry::make('basic')
-                    ->numeric()
-                    ->placeholder('-'),
-                TextEntry::make('appraisal_year')
-                    ->numeric(),
-                TextEntry::make('appraisal_cycle'),
-                TextEntry::make('status'),
-                TextEntry::make('pending_with')
-                    ->placeholder('-'),
-                TextEntry::make('appraisal_start_date')
-                    ->date()
-                    ->placeholder('-'),
-                TextEntry::make('appraisal_end_date')
-                    ->date()
-                    ->placeholder('-'),
-                TextEntry::make('deadline_extension')
-                    ->date()
-                    ->placeholder('-'),
-                TextEntry::make('appraisal_form_data')
-                    ->placeholder('-')
-                    ->columnSpanFull(),
-                TextEntry::make('common_evaluation_data')
-                    ->placeholder('-')
-                    ->columnSpanFull(),
-                TextEntry::make('regional_head_assessment_data')
-                    ->placeholder('-')
-                    ->columnSpanFull(),
-                TextEntry::make('final_assessment_data')
-                    ->placeholder('-')
-                    ->columnSpanFull(),
-                TextEntry::make('final_increment')
-                    ->placeholder('-')
-                    ->columnSpanFull(),
-                IconEntry::make('is_released')
-                    ->boolean(),
-                TextEntry::make('created_at')
-                    ->dateTime()
-                    ->placeholder('-'),
-                TextEntry::make('updated_at')
-                    ->dateTime()
-                    ->placeholder('-'),
+                // --- Header Section ---
+                Section::make('Appraisal Details')
+                    ->columns(4)
+                    ->schema([
+                        TextEntry::make('application_no'),
+                        TextEntry::make('status')
+                            ->badge()
+                            ->color(fn ($record) => $record->status_color)
+                            ->formatStateUsing(fn ($state) => ucfirst(str_replace('_', ' ', $state))),
+                        TextEntry::make('appraisal_year')->label('Year'),
+                        TextEntry::make('appraisal_cycle')->label('Cycle'),
+                    ]),
+
+                // --- Snapshot Section ---
+                Section::make('Employee Snapshot')
+                    ->columns(3)
+                    ->schema([
+                        TextEntry::make('employee.name')->label('Name'),
+                        TextEntry::make('designation.designation')->label('Designation'),
+                        TextEntry::make('department.department')->label('Department'),
+                        TextEntry::make('office.office')->label('Office'),
+                        TextEntry::make('basic')->label('Basic Pay')->money('INR'),
+                    ]),
+
+                // --- PART A: Visible to Everyone ---
+                Section::make('Appraisal Form (Part A)')
+                    ->description('Employee Self Appraisal')
+                    ->schema([
+                        TextEntry::make('appraisal_form_data.job_profile')->label('Job Profile'),
+                        TextEntry::make('appraisal_form_data.satisfaction')->label('Satisfaction'),
+                        TextEntry::make('appraisal_form_data.profile_modifications')->label('Profile Modifications'),
+                        TextEntry::make('appraisal_form_data.achievements')->label('Achievements'),
+                        TextEntry::make('appraisal_form_data.performance_gaps')->label('Performance Gaps'),
+                        TextEntry::make('appraisal_form_data.career_goals')->label('Career Goals'),
+                        TextEntry::make('appraisal_form_data.training_needs')->label('Training Needs'),
+                    ]),
+
+                // --- PART B: Confidential (Hidden from Employee) ---
+                Section::make('Common Evaluation (Part B)')
+                    ->description('Confidential Evaluation by Reporting Officer')
+                    ->visible(fn ($record) => 
+                        Auth::user()->hasAnyRole(['HOD', 'Regional Head', 'Chapter Head', 'DG & CEO']) || 
+                        $record->is_released
+                    )
+                    ->schema([
+                        TextEntry::make('common_evaluation_data.agree_with_employee')->label('Agrees with Employee?'),
+                        TextEntry::make('common_evaluation_data.competency_comparison')->label('Competency Comparison'),
+                        TextEntry::make('common_evaluation_data.initiative')->label('Initiative'),
+                        TextEntry::make('common_evaluation_data.accomplishments')->label('Accomplishments'),
+                        TextEntry::make('common_evaluation_data.overall_assessment')->label('Overall Assessment'),
+                    ]),
+
+                // --- PART C: Regional Head (Hidden from Employee & Chapter Head) ---
+                Section::make('Regional Head Assessment')
+                    ->visible(fn ($record) => 
+                        Auth::user()->hasAnyRole(['Regional Head', 'DG & CEO']) || 
+                        $record->is_released
+                    )
+                    ->schema([
+                        TextEntry::make('regional_head_assessment_data.agree_with_chapter_head')->label('Agrees with Chapter Head?'),
+                        TextEntry::make('regional_head_assessment_data.comments')->label('Comments'),
+                    ]),
+
+                // --- PART D: Final Assessment (DG Only) ---
+                Section::make('Final Assessment')
+                    ->visible(fn ($record) => Auth::user()->hasRole('DG & CEO'))
+                    ->schema([
+                        TextEntry::make('final_assessment_data.agree_with_evaluation')->label('Agrees with Evaluation?'),
+                        TextEntry::make('final_increment')
+                            ->label('Final Increment %')
+                            ->badge()
+                            ->color('success'),
+                    ]),
             ]);
     }
 }

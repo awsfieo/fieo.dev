@@ -9,6 +9,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\ToggleButtons;
+use Filament\Forms\Components\Hidden;
 use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Support\Facades\Auth;
 
@@ -28,7 +29,6 @@ class AppraisalForm
                             ->disabled()
                             ->dehydrated(),
 
-                        // FIX: Allow null state and handle default for 'Create' view
                         TextInput::make('status')
                             ->default('draft')
                             ->formatStateUsing(fn(?string $state): string => ucfirst(str_replace('_', ' ', $state ?? 'draft')))
@@ -43,11 +43,12 @@ class AppraisalForm
 
                         TextInput::make('appraisal_cycle')
                             ->label('Appraisal Month')
-                            ->default('April') // Or determine dynamically
+                            ->default('April')
                             ->disabled()
                             ->dehydrated(),
                     ])
-                    ->columnspanfull(),
+                    ->columnSpanFull(),
+
                 Section::make('Employee Details')
                     ->columns(3)
                     ->schema([
@@ -55,12 +56,12 @@ class AppraisalForm
                             ->label('Employee Code')
                             ->dehydrated(false)
                             ->default(fn() => Auth::user()->employee?->employee_code)
+                            ->afterStateHydrated(fn($component, $record) => $component->state($record?->employee_code ?? Auth::user()->employee?->employee_code))
                             ->disabled(),
 
                         TextInput::make('employee_name')
                             ->label('Name')
                             ->dehydrated(false)
-                            // FIX: Load from relationship if record exists, else use Auth user
                             ->afterStateHydrated(fn($component, $record) => $component->state($record?->employee?->name ?? Auth::user()->employee?->name))
                             ->disabled(),
 
@@ -87,18 +88,28 @@ class AppraisalForm
                             ->dehydrated(false)
                             ->afterStateHydrated(fn($component, $record) => $component->state($record?->basic ?? Auth::user()->employee?->basic))
                             ->disabled(),
-                    ])->columnspanfull(),
+                            
+                        // Hidden ID to ensure relationship saves
+                        Hidden::make('employee_id')->default(fn() => Auth::user()->employee?->id),
+                    ])->columnSpanFull(),
 
                 // --- 2. APPRAISAL FORM (Part A) ---
                 Section::make('Appraisal Form')
                     ->description('To be filled by the Employee')
-                    ->disabled(
-                        fn($record) =>
-                        $record && (
-                            $record->status !== 'draft' ||
-                            $record->employee_code !== Auth::user()->employee?->employee_code
-                        )
-                    )
+                    // FIX: This logic now correctly allows editing if it's your draft
+                    ->disabled(function ($record) {
+                        // If creating new, allow edit
+                        if (! $record) return false;
+                        
+                        // If status is NOT draft, disable it
+                        if ($record->status !== 'draft') return true;
+
+                        // If I am NOT the owner, disable it
+                        if ($record->employee_id !== Auth::user()->employee?->id) return true;
+
+                        // Otherwise, allow edit
+                        return false;
+                    })
                     ->schema([
                         Textarea::make('appraisal_form_data.job_profile')
                             ->label('1. Define your job profile')
@@ -136,7 +147,7 @@ class AppraisalForm
                         Textarea::make('appraisal_form_data.training_needs')
                             ->label('7. Specific training/mentoring required')
                             ->rows(2),
-                    ])->columnspanfull(),
+                    ])->columnSpanFull(),
 
                 // --- 3. COMMON EVALUATION (Part B) ---
                 Section::make('Common Evaluation (Part B)')
@@ -187,7 +198,7 @@ class AppraisalForm
                             ->label('Overall Assessment')
                             ->rows(3)
                             ->required(),
-                    ])->columnspanfull(),
+                    ])->columnSpanFull(),
 
                 // --- 4. REGIONAL HEAD ASSESSMENT ---
                 Section::make('Assessment by Regional Head')
@@ -211,7 +222,7 @@ class AppraisalForm
                         Textarea::make('regional_head_assessment_data.comments')
                             ->label('Comments')
                             ->rows(3),
-                    ])->columnspanfull(),
+                    ])->columnSpanFull(),
 
                 // --- 5. FINAL ASSESSMENT (DG & CEO) ---
                 Section::make('Final Assessment')
@@ -246,7 +257,7 @@ class AppraisalForm
                             ])
                             ->inline()
                             ->required(),
-                    ])->columnspanfull(),
+                    ])->columnSpanFull(),
             ]);
     }
 
@@ -254,7 +265,7 @@ class AppraisalForm
     {
         return Select::make("common_evaluation_data.ratings.{$key}")
             ->label($label)
-            ->options([1 => '1', 2 => '2', 3 => '3', 4 => '4', 5 => '5'])
+            ->options([1 => '1 - Minimum', 2 => '2', 3 => '3', 4 => '4', 5 => '5 - Maximum'])
             ->native(false);
     }
 }

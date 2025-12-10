@@ -11,53 +11,56 @@ class Appraisal extends Model
     protected $guarded = [];
 
     protected $casts = [
-        // Encryption
         'appraisal_form_data'           => 'encrypted:array',
         'common_evaluation_data'        => 'encrypted:array',
         'regional_head_assessment_data' => 'encrypted:array',
         'final_assessment_data'         => 'encrypted:array',
         'final_increment'               => 'encrypted',
-
-        // Standard
-        'file_history'                   => 'array',
-        'deadline_extension'             => 'date',
-        'appraisal_start_date'           => 'date',
-        'appraisal_end_date'             => 'date',
-        'emp_granted_deadline_extension' => 'array', // Fixed cast to array
-        'is_released'                    => 'boolean',
-        'basic'                          => 'decimal:2',
+        'file_history'                  => 'array',
+        'deadline_extension'            => 'date',
+        'appraisal_start_date'          => 'date',
+        'appraisal_end_date'            => 'date',
+        'emp_granted_deadline_extension'=> 'array',
+        'is_released'                   => 'boolean',
+        'basic'                         => 'decimal:2',
     ];
 
     protected static function booted(): void
     {
         static::creating(function ($model) {
-            $user = Auth::user();
-            $employee = $user?->employee;
-
-            // 1. Auto-fill Employee ID & Snapshot Details
-            if (empty($model->employee_id) && $employee) {
-                $model->employee_id   = $employee->id;
-                $model->employee_code = $employee->employee_code;
-                
-                // SNAPSHOTS: Capture current details
-                $model->designation_id = $employee->designation_id;
-                $model->department_id  = $employee->department_id;
-                $model->office_id      = $employee->office_id;
-                $model->basic          = $employee->basic;
+            // 1. Ensure Employee ID is set
+            if (empty($model->employee_id)) {
+                $model->employee_id = Auth::user()?->employee?->id;
             }
 
-            // 2. Auto-generate Application No
-            if (empty($model->application_no) && $model->employee_code) {
+            // 2. Ensure Employee Code is set (Vital for App No)
+            if (empty($model->employee_code) && $model->employee_id) {
+                // Fetch from relationship if not in payload
+                $employee = Employee::find($model->employee_id);
+                $model->employee_code = $employee?->employee_code;
+                
+                // Also fill snapshot data while we are at it
+                $model->designation_id = $employee?->designation_id;
+                $model->department_id  = $employee?->department_id;
+                $model->office_id      = $employee?->office_id;
+                $model->basic          = $employee?->basic;
+            }
+
+            // 3. Generate Application No
+            if (empty($model->application_no)) {
                 $year = $model->appraisal_year ?? date('Y');
                 $cycle = strtoupper(substr($model->appraisal_cycle ?? 'APR', 0, 3));
-                $empSuffix = str_pad(substr($model->employee_code, -4), 4, '0', STR_PAD_LEFT);
                 
+                // Fallback if employee code is still somehow missing
+                $empSuffix = $model->employee_code 
+                    ? str_pad(substr($model->employee_code, -4), 4, '0', STR_PAD_LEFT)
+                    : 'TMP-' . rand(1000, 9999);
+                
+                // Format: APR/2025/APR/0052
                 $model->application_no = "APR/{$year}/{$cycle}/{$empSuffix}";
             }
         });
     }
-
-    // --- Relationships ---
 
     public function employee(): BelongsTo
     {
@@ -68,8 +71,7 @@ class Appraisal extends Model
     {
         return $this->belongsTo(Employee::class, 'pending_with', 'employee_code');
     }
-    
-    // Snapshot Relationships (Optional, if you want to see what the designation WAS at that time)
+
     public function designation(): BelongsTo
     {
         return $this->belongsTo(Designation::class, 'designation_id');
