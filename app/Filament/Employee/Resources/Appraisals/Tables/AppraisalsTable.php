@@ -16,8 +16,8 @@ class AppraisalsTable
             ->columns([
                 TextColumn::make('application_no')
                     ->searchable()
-                    ->sortable()
-                    ->weight('bold'),
+                    ->sortable(),
+                    // ->weight('bold'),
 
                 TextColumn::make('employee.name')
                     ->label('Employee')
@@ -36,9 +36,9 @@ class AppraisalsTable
                     ->badge()
                     ->color(fn ($record) => $record->status_color),
 
-                TextColumn::make('pendingWith.name')
-                    ->label('Pending With')
-                    ->icon('heroicon-m-user'),
+                // TextColumn::make('pendingWith.name')
+                //     ->label('Pending With')
+                //     ->icon('heroicon-m-user'),
             ])
             ->filters([
                 // Add year filter later if needed
@@ -46,7 +46,7 @@ class AppraisalsTable
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make()
-                    ->label(fn($record) => $record->status === 'draft' ? 'Edit' : 'Assess')
+                    ->label(fn($record) => $record->status === 'draft' ? 'Edit' : 'Edit')
                     ->color(fn($record) => $record->status === 'draft' ? 'primary' : 'warning'),
             ]);
     }
