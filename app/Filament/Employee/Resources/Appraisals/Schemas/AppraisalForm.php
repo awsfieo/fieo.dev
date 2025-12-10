@@ -24,14 +24,14 @@ class AppraisalForm
                     ->columns(4)
                     ->schema([
                         TextInput::make('application_no')
-                            ->label('Appraisal No')
+                            ->label('Appraisal Ref No')
                             ->placeholder('Auto-generated')
                             ->disabled()
                             ->dehydrated(),
 
                         TextInput::make('status')
                             ->default('draft')
-                            ->formatStateUsing(fn(?string $state): string => ucfirst(str_replace('_', ' ', $state ?? 'draft')))
+                            ->formatStateUsing(fn(?string $state): string => strtolower(str_replace('_', ' ', $state ?? 'draft')))
                             ->disabled()
                             ->dehydrated(),
 
