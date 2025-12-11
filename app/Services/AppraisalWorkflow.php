@@ -14,35 +14,39 @@ class AppraisalWorkflow
      */
     public function submit(Appraisal $appraisal): void
     {
-        // 1. Determine the Reporting Officer (Chapter Head / Regional Head / HOD)
+        // 1. Determine the Reporting Officer
         $nextActor = $this->determineReportingOfficer($appraisal);
 
-        // 2. Update Status & Pending With
+        // 2. Determine Status based on Destination
+        // Default: 'submitted' (Goes to Common Evaluation / Part B)
+        $nextStatus = 'submitted';
+
+        // FIX: If routing directly to DG & CEO, SKIP intermediate steps.
+        // Jump straight to Final Review (Part D).
+        if ($nextActor && $nextActor->user?->hasRole('DG & CEO')) {
+            $nextStatus = 'final_review_pending';
+        }
+
+        // 3. Update Status & Pending With
         $appraisal->update([
-            'status'       => 'submitted', // Moves to "Common Evaluation" stage
+            'status'       => $nextStatus,
             'pending_with' => $nextActor?->employee_code,
             'file_history' => $this->appendHistory(
                 $appraisal,
                 'Submitted',
-                'Self-Appraisal submitted. Forwarded to Reporting Officer.',
+                'Self-Appraisal submitted. Forwarded to ' . ($nextActor->designation->designation ?? 'Reporting Officer') . '.',
                 Auth::user()->employee,
                 $nextActor?->employee_code
             ),
         ]);
     }
 
-    /**
-     * Handle the assessment by Reporting Officer (HOD / Chapter Head).
-     */
+    // ... (assess, reviewRegional, finalize methods remain same) ...
     public function assess(Appraisal $appraisal): void
     {
         $currentUser = Auth::user();
-        
-        // Determine if this needs to go to Regional Head or straight to DG
         $nextActor = $this->determineReviewingOfficer($appraisal, $currentUser);
         
-        // If next is Regional Head, status is 'regional_head_review_pending'
-        // If next is DG, status is 'final_review_pending'
         $nextStatus = $nextActor && $nextActor->user?->hasRole('Regional Head') 
             ? 'regional_head_review_pending' 
             : 'final_review_pending';
@@ -51,18 +55,11 @@ class AppraisalWorkflow
             'status'       => $nextStatus,
             'pending_with' => $nextActor?->employee_code,
             'file_history' => $this->appendHistory(
-                $appraisal,
-                'Assessed',
-                'Common Evaluation completed.',
-                $currentUser->employee,
-                $nextActor?->employee_code
+                $appraisal, 'Assessed', 'Common Evaluation completed.', $currentUser->employee, $nextActor?->employee_code
             ),
         ]);
     }
 
-    /**
-     * Regional Head reviews Chapter Head's assessment.
-     */
     public function reviewRegional(Appraisal $appraisal): void
     {
         $dg = $this->findRole('DG & CEO');
@@ -71,28 +68,18 @@ class AppraisalWorkflow
             'status'       => 'final_review_pending',
             'pending_with' => $dg?->employee_code,
             'file_history' => $this->appendHistory(
-                $appraisal,
-                'Regional Review',
-                'Regional assessment completed. Forwarded to DG & CEO.',
-                Auth::user()->employee,
-                $dg?->employee_code
+                $appraisal, 'Regional Review', 'Regional assessment completed.', Auth::user()->employee, $dg?->employee_code
             ),
         ]);
     }
 
-    /**
-     * Final DG Assessment.
-     */
     public function finalize(Appraisal $appraisal): void
     {
         $appraisal->update([
             'status'       => 'closed',
-            'pending_with' => null, // Process End
+            'pending_with' => null,
             'file_history' => $this->appendHistory(
-                $appraisal,
-                'Finalized',
-                'Annual Increment decided by DG & CEO.',
-                Auth::user()->employee
+                $appraisal, 'Finalized', 'Annual Increment decided by DG & CEO.', Auth::user()->employee
             ),
         ]);
     }
@@ -102,41 +89,47 @@ class AppraisalWorkflow
     public function determineReportingOfficer(Appraisal $appraisal): ?Employee
     {
         $employee = $appraisal->employee;
-        $department = $employee->department;
+        $user = $employee->user; 
 
-        // CRITICAL FIX: Determine workflow based on Department Type/Region, NOT Office ID.
-        // This mirrors the logic in TourClaimWorkflow.
-        $region = $department?->region; // e.g., 'WR', 'NR', 'SR'
-        $deptType = $department?->type; // e.g., 'RO', 'CO', 'HO'
+        // --- SPECIAL LOGIC FOR HEADS ---
 
-        // 1. If Employee is in a CHAPTER OFFICE (CO) -> Goes to Chapter Head
-        if ($deptType === 'CO' || str_contains(strtolower($employee->office?->office ?? ''), 'chapter')) {
-            // Note: Chapter Heads are still typically found by Office ID, 
-            // but if you want strict department logic, ensure Chapter Heads have a distinct Department Role.
-            // For now, we keep Office ID for Chapter Heads ONLY as per TourClaimWorkflow pattern.
-            return $this->findRoleInScope('Chapter Head', officeId: $employee->office_id);
-        }
-
-        // 2. If Employee is in REGIONAL OFFICE (RO) -> Goes to Regional Head
-        // FIX: We now use the REGION string to find the Regional Head.
-        if ($deptType === 'RO' || str_contains(strtolower($employee->office?->office ?? ''), 'regional')) {
+        // Case A: Chapter Head Submits -> Goes to Regional Head
+        if ($user && $user->hasRole('Chapter Head')) {
+            // Find Regional Head for this Chapter's region
+            $region = $employee->office?->region ?? $employee->department?->region; 
             return $this->findRoleInScope('Regional Head', region: $region);
         }
 
-        // 3. If Employee is in HEAD OFFICE (HO) -> Goes to HOD
+        // Case B: Regional Head OR HOD Submits -> Goes to DG & CEO directly
+        if ($user && ($user->hasRole('Regional Head') || $user->hasRole('HOD'))) {
+            return $this->findRole('DG & CEO');
+        }
+
+        // --- STANDARD LOGIC FOR STAFF ---
+        
+        $officeType = $employee->office?->type; 
+        $region = $employee->department?->region ?? $employee->office?->region; 
+
+        // 1. Chapter Office (CO) -> Goes to Chapter Head
+        if ($officeType === 'CO' || str_contains(strtolower($employee->office?->office ?? ''), 'chapter')) {
+            return $this->findRoleInScope('Chapter Head', officeId: $employee->office_id);
+        }
+
+        // 2. Regional Office (RO) -> Goes to Regional Head
+        if ($officeType === 'RO' || str_contains(strtolower($employee->office?->office ?? ''), 'regional')) {
+            return $this->findRoleInScope('Regional Head', region: $region);
+        }
+
+        // 3. Head Office (HO) -> Goes to HOD
         return $this->findRoleInScope('HOD', deptId: $employee->department_id);
     }
 
     public function determineReviewingOfficer(Appraisal $appraisal, User $currentActor): ?Employee
     {
-        // If the current actor is a Chapter Head, it MUST go to Regional Head
         if ($currentActor->hasRole('Chapter Head')) {
-            // Find Regional Head for this Chapter's region
-            $region = $appraisal->employee->department?->region ?? 'HO'; 
+            $region = $appraisal->employee->office?->region ?? $appraisal->employee->department?->region; 
             return $this->findRoleInScope('Regional Head', region: $region);
         }
-
-        // Otherwise (HOD or Regional Head acting as RO), it goes to DG
         return $this->findRole('DG & CEO');
     }
 
@@ -147,28 +140,15 @@ class AppraisalWorkflow
 
     private function findRoleInScope(string $role, ?int $officeId = null, ?int $deptId = null, ?string $region = null): ?Employee
     {
-        // Retrieve all users with the required Role
         $users = User::role($role)->get();
 
         foreach ($users as $user) {
             $emp = $user->employee;
             if (!$emp) continue;
 
-            // Priority 1: Match by Region (Critical for Regional Heads)
-            // Checks if the Regional Head's department region matches the target region (e.g., 'WR')
-            if ($region && ($emp->department?->region === $region)) {
-                return $emp;
-            }
-
-            // Priority 2: Match by Department ID (For HODs)
-            if ($deptId && $emp->department_id === $deptId) {
-                return $emp;
-            }
-
-            // Priority 3: Match by Office ID (For Chapter Heads)
-            if ($officeId && $emp->office_id === $officeId) {
-                return $emp;
-            }
+            if ($region && ($emp->department?->region === $region || $emp->office?->region === $region)) return $emp;
+            if ($deptId && $emp->department_id === $deptId) return $emp;
+            if ($officeId && $emp->office_id === $officeId) return $emp;
         }
         
         return null;
