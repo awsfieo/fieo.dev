@@ -14,6 +14,7 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
+use Filament\Forms\Components\Grid;
 
 class AppraisalForm
 {
@@ -26,7 +27,7 @@ class AppraisalForm
                     ->columns(4)
                     ->schema([
                         TextInput::make('application_no')->label('Appraisal Ref No')->placeholder('Auto-generated')->disabled()->dehydrated(),
-                        TextInput::make('status')->default('draft')->formatStateUsing(fn(?string $state): string => strtolower(str_replace('_', ' ', $state ?? 'draft')))->disabled()->dehydrated(false),
+                        TextInput::make('status')->label('Current Status')->default('draft')->formatStateUsing(fn(?string $state): string => ucfirst(str_replace('_', ' ', $state ?? 'draft')))->disabled()->dehydrated(false),
                         TextInput::make('appraisal_year')->label('Appraisal Year')->default(date('Y'))->disabled()->dehydrated(),
                         TextInput::make('appraisal_cycle')->label('Appraisal Month')->default('April')->disabled()->dehydrated(),
                     ])->columnSpanFull(),
@@ -84,7 +85,7 @@ class AppraisalForm
                             ->columnSpanFull(),
 
                         // ... (Repeat for all Part A fields) ...
-                        ToggleButtons::make('appraisal_form_data.satisfaction')
+                        ToggleButtons::make('appraisal_form_data.job_satisfaction')
                             ->label('2. How satisfied are you with your job profile?')
                             ->options([
                                 'Not Satisfied' => 'Not Satisfied',
@@ -92,18 +93,34 @@ class AppraisalForm
                                 'Satisfied' => 'Satisfied',
                                 'Extremely Satisfied' => 'Extremely Satisfied',
                             ])
-                            ->inline()
+                            ->columns([
+                                'default' => 1, // Stack vertically on mobile
+                                'sm' => 2,      // 2 columns on small screens
+                                'lg' => 4,      // 4 columns on large screens (equal width)
+                            ])
+                            ->colors([
+                                'Not Satisfied' => 'danger',
+                                'Somewhat Satisfied' => 'warning',
+                                'Satisfied' => 'success',
+                                'Extremely Satisfied' => 'primary',
+                            ])
+                            ->icons([
+                                'Not Satisfied' => 'heroicon-o-hand-thumb-down',
+                                'Somewhat Satisfied' => 'heroicon-o-face-frown',
+                                'Satisfied' => 'heroicon-o-face-smile',
+                                'Extremely Satisfied' => 'heroicon-o-hand-thumb-up',
+                            ])
                             ->required()
                             ->visible(fn($record) => $record === null || $record->status === 'draft')
                             ->columnSpanFull(),
 
-                        Placeholder::make('view_satisfaction')
+                        Placeholder::make('view_job_satisfaction')
                             ->label('2. How satisfied are you with your job profile?')
-                            ->content(fn($record) => $record->appraisal_form_data['satisfaction'] ?? '-')
+                            ->content(fn($record) => $record->appraisal_form_data['job_satisfaction'] ?? '-')
                             ->visible(fn($record) => $record && $record->status !== 'draft')
                             ->columnSpanFull(),
 
-                        RichEditor::make('appraisal_form_data.profile_modifications')
+                        RichEditor::make('appraisal_form_data.job_enrichment')
                             ->toolbarButtons([
                                 ['italic', 'underline', 'link'],
                                 ['bulletList', 'orderedList'],
@@ -114,9 +131,9 @@ class AppraisalForm
                             ->visible(fn($record) => $record === null || $record->status === 'draft')
                             ->columnSpanFull(),
 
-                        Placeholder::make('view_profile_modifications')
+                        Placeholder::make('view_job_enrichment')
                             ->label('3. What can be modified in your job profile or in which area of functioning you may be deployed to utilize your potential much more effectively?')
-                            ->content(fn($record) => new HtmlString($record->appraisal_form_data['profile_modifications'] ?? '-'))
+                            ->content(fn($record) => new HtmlString($record->appraisal_form_data['job_enrichment'] ?? '-'))
                             ->visible(fn($record) => $record && $record->status !== 'draft')
                             ->columnSpanFull(),
 
@@ -193,7 +210,7 @@ class AppraisalForm
 
                 // --- 3. COMMON EVALUATION (Part B) ---
                 // LOGIC: Editable if 'submitted'. Read-Only if anything else (like 'regional_head_review_pending').
-                Section::make('Common Evaluation (Part B)')
+                Section::make('Common Evaluation Form')
                     ->description('To be filled by Reporting Officer')
                     ->visible(
                         fn($record) =>
@@ -386,8 +403,8 @@ class AppraisalForm
 
                         ToggleButtons::make('final_increment')
                             ->label('Final Recommendation (Annual Increment)')
-                            ->options(['0%' => '0%', '3%' => '3%', '5%' => '5%', '7%' => '7%'])
-                            ->colors(['0%' => 'danger', '3%' => 'warning', '5%' => 'success', '7%' => 'success'])
+                            ->options(['0%' => '0%', '5%' => '5%', '7%' => '7%', '10%' => '10%'])
+                            ->colors(['0%' => 'danger', '5%' => 'warning', '7%' => 'success', '10%' => 'success'])
                             ->inline()
                             ->required()
                             ->dehydrated(),

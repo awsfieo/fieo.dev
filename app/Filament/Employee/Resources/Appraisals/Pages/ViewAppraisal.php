@@ -27,7 +27,9 @@ class ViewAppraisal extends ViewRecord
                 )
                 ->requiresConfirmation()
                 ->modalHeading('Submit Appraisal?')
-                ->modalDescription('This will lock the form and forward it to your Reporting Officer.')
+                ->modalDescription('This will lock the Appraisal Form and forward it to your Reporting Officer. 
+                You will not be able to edit the form after submission and only one Appraisal form can be submitted per year.
+                So be sure before you proceed.')
                 ->action(function (AppraisalWorkflow $workflow) {
                     $workflow->submit($this->getRecord());
                     Notification::make()->title('Appraisal Submitted Successfully')->success()->send();

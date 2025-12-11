@@ -15,25 +15,28 @@ class AppraisalsTable
         return $table
             ->columns([
                 TextColumn::make('application_no')
+                    ->label('Appraisal Ref No')
                     ->searchable()
                     ->sortable(),
                 // ->weight('bold'),
 
                 TextColumn::make('employee.name')
-                    ->label('Employee')
+                    ->label('Employee Name')
                     ->searchable()
                     ->sortable(),
 
                 // Snapshot display: show designation captured at time of appraisal
                 TextColumn::make('designation.designation')
-                    ->label('Designation (Snapshot)')
+                    ->label('Designation')
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                TextColumn::make('appraisal_year')->label('Year'),
-                TextColumn::make('appraisal_cycle')->label('Cycle'),
+                TextColumn::make('appraisal_year')->label('Appraisal Year'),
+                TextColumn::make('appraisal_cycle')->label('Appraisal Month'),
 
                 TextColumn::make('status')
+                    ->label('Current Status')
                     ->badge()
+                    ->formatStateUsing(fn(?string $state): string => ucfirst(str_replace('_', ' ', $state ?? 'draft')))
                     ->color(fn($record) => $record->status_color),
 
                 // TextColumn::make('pendingWith.name')

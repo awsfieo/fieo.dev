@@ -12,6 +12,8 @@ class CreateAppraisal extends CreateRecord
 {
     protected static string $resource = AppraisalResource::class;
 
+    protected static bool $canCreateAnother = false;
+
     public function mount(): void
     {
         $employee = Auth::user()->employee;

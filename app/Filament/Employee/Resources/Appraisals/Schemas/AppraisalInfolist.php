@@ -18,13 +18,15 @@ class AppraisalInfolist
                 Section::make('Appraisal Details')
                     ->columns(4)
                     ->schema([
-                        TextEntry::make('application_no'),
+                        TextEntry::make('application_no')
+                            ->label('Appraisal Ref No'),
                         TextEntry::make('status')
+                        ->label('Current Status')
                             ->badge()
                             ->color(fn($record) => $record->status_color)
                             ->formatStateUsing(fn($state) => ucfirst(str_replace('_', ' ', $state))),
-                        TextEntry::make('appraisal_year')->label('Year'),
-                        TextEntry::make('appraisal_cycle')->label('Cycle'),
+                        TextEntry::make('appraisal_year')->label('Appraisal Year'),
+                        TextEntry::make('appraisal_cycle')->label('Appraisal Month'),
                     ])->columnSpanFull(),
 
                 // --- Snapshot Section ---
@@ -40,12 +42,12 @@ class AppraisalInfolist
                     ])->columnSpanFull(),
 
                 // --- PART A: Visible to Everyone ---
-                Section::make('Appraisal Form (Part A)')
+                Section::make('Appraisal Form')
                     ->description('Employee Self Appraisal')
                     ->schema([
                         TextEntry::make('appraisal_form_data.job_profile')->label('Job Profile')->html()->prose(),
-                        TextEntry::make('appraisal_form_data.satisfaction')->label('Job Satisfaction')->html()->prose(),
-                        TextEntry::make('appraisal_form_data.profile_improvements')->label('Profile Improvements')->html()->prose(),
+                        TextEntry::make('appraisal_form_data.job_satisfaction')->label('Job Satisfaction')->html()->prose(),
+                        TextEntry::make('appraisal_form_data.job_enrichment')->label('Job Enrichment')->html()->prose(),
                         TextEntry::make('appraisal_form_data.achievements')->label('Achievements')->html()->prose(),
                         TextEntry::make('appraisal_form_data.performance_gaps')->label('Performance Gaps')->html()->prose(),
                         TextEntry::make('appraisal_form_data.career_goals')->label('Career Goals')->html()->prose(),
@@ -53,8 +55,8 @@ class AppraisalInfolist
                     ])->columnSpanFull(),
 
                 // --- PART B: Confidential (Hidden from Employee) ---
-                Section::make('Common Evaluation (Part B)')
-                    ->description('Confidential Evaluation by Reporting Officer')
+                Section::make('Common Evaluation Form')
+                    ->description('Confidential Evaluation by Supervisory Officer')
                     ->visible(
                         fn($record) => (
                             // Condition 1: Must have a Supervisor Role AND NOT be the Employee itself
@@ -95,6 +97,7 @@ class AppraisalInfolist
                     ->visible(fn($record) => Auth::user()->hasRole('DG & CEO'))
                     ->schema([
                         TextEntry::make('final_assessment_data.agree_with_evaluation')->label('Agrees with Evaluation?')->html()->prose(),
+                        TextEntry::make('final_assessment_data.comments')->label('Comments')->html()->prose(),
                         TextEntry::make('final_increment')
                             ->label('Final Increment %')
                             ->badge()
