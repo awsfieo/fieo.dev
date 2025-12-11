@@ -66,6 +66,12 @@ class AppraisalForm
                         // Ensure it uses the visible() toggle between RichEditor and Placeholder
                         // For brevity, I am not repeating it here, but KEEP IT exactly as the previous solution.
                         RichEditor::make('appraisal_form_data.job_profile')
+                            ->toolbarButtons([
+                                ['italic', 'underline', 'link'],
+                                ['bulletList', 'orderedList'],
+                                ['table'], // The `customBlocks` and `mergeTags` tools are also added here if those features are used.
+
+                            ])
                             ->label('1. Define your job profile')
                             ->required()
                             ->visible(fn($record) => $record === null || $record->status === 'draft')
@@ -79,7 +85,7 @@ class AppraisalForm
 
                         // ... (Repeat for all Part A fields) ...
                         ToggleButtons::make('appraisal_form_data.satisfaction')
-                            ->label('2. Are you satisfied with your job profile?')
+                            ->label('2. How satisfied are you with your job profile?')
                             ->options([
                                 'Not Satisfied' => 'Not Satisfied',
                                 'Somewhat Satisfied' => 'Somewhat Satisfied',
@@ -92,63 +98,93 @@ class AppraisalForm
                             ->columnSpanFull(),
 
                         Placeholder::make('view_satisfaction')
-                            ->label('2. Are you satisfied with your job profile?')
+                            ->label('2. How satisfied are you with your job profile?')
                             ->content(fn($record) => $record->appraisal_form_data['satisfaction'] ?? '-')
                             ->visible(fn($record) => $record && $record->status !== 'draft')
                             ->columnSpanFull(),
 
                         RichEditor::make('appraisal_form_data.profile_modifications')
-                            ->label('3. What can be modified in your job profile?')
+                            ->toolbarButtons([
+                                ['italic', 'underline', 'link'],
+                                ['bulletList', 'orderedList'],
+                                ['table'], // The `customBlocks` and `mergeTags` tools are also added here if those features are used.
+
+                            ])
+                            ->label('3. What can be modified in your job profile or in which area of functioning you may be deployed to utilize your potential much more effectively?')
                             ->visible(fn($record) => $record === null || $record->status === 'draft')
                             ->columnSpanFull(),
 
                         Placeholder::make('view_profile_modifications')
-                            ->label('3. What can be modified in your job profile?')
+                            ->label('3. What can be modified in your job profile or in which area of functioning you may be deployed to utilize your potential much more effectively?')
                             ->content(fn($record) => new HtmlString($record->appraisal_form_data['profile_modifications'] ?? '-'))
                             ->visible(fn($record) => $record && $record->status !== 'draft')
                             ->columnSpanFull(),
 
                         RichEditor::make('appraisal_form_data.achievements')
-                            ->label('4. Achievements during review period')
+                            ->toolbarButtons([
+                                ['italic', 'underline', 'link'],
+                                ['bulletList', 'orderedList'],
+                                ['table'], // The `customBlocks` and `mergeTags` tools are also added here if those features are used.
+
+                            ])
+                            ->label('4. What were your achievements during the review period? How did you achieve it?')
                             ->required()
                             ->visible(fn($record) => $record === null || $record->status === 'draft')
                             ->columnSpanFull(),
 
                         Placeholder::make('view_achievements')
-                            ->label('4. Achievements during review period')
+                            ->label('4. What were your achievements during the review period? How did you achieve it?')
                             ->content(fn($record) => new HtmlString($record->appraisal_form_data['achievements'] ?? '-'))
                             ->visible(fn($record) => $record && $record->status !== 'draft')
                             ->columnSpanFull(),
 
                         RichEditor::make('appraisal_form_data.performance_gaps')
-                            ->label('5. Areas for improvement & support required')
+                            ->toolbarButtons([
+                                ['italic', 'underline', 'link'],
+                                ['bulletList', 'orderedList'],
+                                ['table'], // The `customBlocks` and `mergeTags` tools are also added here if those features are used.
+
+                            ])
+                            ->label('5. What are the areas where performance could have been better?  What support is required to improve the performance?')
                             ->visible(fn($record) => $record === null || $record->status === 'draft')
                             ->columnSpanFull(),
 
                         Placeholder::make('view_performance_gaps')
-                            ->label('5. Areas for improvement & support required')
+                            ->label('5. What are the areas where performance could have been better?  What support is required to improve the performance?')
                             ->content(fn($record) => new HtmlString($record->appraisal_form_data['performance_gaps'] ?? '-'))
                             ->visible(fn($record) => $record && $record->status !== 'draft')
                             ->columnSpanFull(),
 
                         RichEditor::make('appraisal_form_data.career_goals')
-                            ->label('6. Medium to long-term career goals')
+                            ->toolbarButtons([
+                                ['italic', 'underline', 'link'],
+                                ['bulletList', 'orderedList'],
+                                ['table'], // The `customBlocks` and `mergeTags` tools are also added here if those features are used.
+
+                            ])
+                            ->label('6. What are your medium to long-term career goals?  How can be Federation help you to achieve the same?')
                             ->visible(fn($record) => $record === null || $record->status === 'draft')
                             ->columnSpanFull(),
 
                         Placeholder::make('view_career_goals')
-                            ->label('6. Medium to long-term career goals')
+                            ->label('6. What are your medium to long-term career goals?  How can be Federation help you to achieve the same?')
                             ->content(fn($record) => new HtmlString($record->appraisal_form_data['career_goals'] ?? '-'))
                             ->visible(fn($record) => $record && $record->status !== 'draft')
                             ->columnSpanFull(),
 
                         RichEditor::make('appraisal_form_data.training_needs')
-                            ->label('7. Specific training/mentoring required')
+                            ->toolbarButtons([
+                                ['italic', 'underline', 'link'],
+                                ['bulletList', 'orderedList'],
+                                ['table'], // The `customBlocks` and `mergeTags` tools are also added here if those features are used.
+
+                            ])
+                            ->label('7. Outline specific training, mentoring programs which would improve your performance and make you more relevant and valuable to the Federation.')
                             ->visible(fn($record) => $record === null || $record->status === 'draft')
                             ->columnSpanFull(),
 
                         Placeholder::make('view_training_needs')
-                            ->label('7. Specific training/mentoring required')
+                            ->label('7. Outline specific training, mentoring programs which would improve your performance and make you more relevant and valuable to the Federation.')
                             ->content(fn($record) => new HtmlString($record->appraisal_form_data['training_needs'] ?? '-'))
                             ->visible(fn($record) => $record && $record->status !== 'draft')
                             ->columnSpanFull(),
@@ -187,6 +223,12 @@ class AppraisalForm
 
                         // --- Competency Comparison ---
                         RichEditor::make('common_evaluation_data.competency_comparison')
+                            ->toolbarButtons([
+                                ['italic', 'underline', 'link'],
+                                ['bulletList', 'orderedList'],
+                                ['table'], // The `customBlocks` and `mergeTags` tools are also added here if those features are used.
+
+                            ])
                             ->label('Job Competencies vis-a-vis others')
                             ->dehydrated()
                             ->visible(fn($record) => $record->status === 'submitted' && $record->pending_with === Auth::user()->employee?->employee_code),
@@ -198,6 +240,12 @@ class AppraisalForm
 
                         // --- Initiative ---
                         RichEditor::make('common_evaluation_data.initiative')
+                            ->toolbarButtons([
+                                ['italic', 'underline', 'link'],
+                                ['bulletList', 'orderedList'],
+                                ['table'], // The `customBlocks` and `mergeTags` tools are also added here if those features are used.
+
+                            ])
                             ->label('Drive to take initiative and innovation')
                             ->dehydrated()
                             ->visible(fn($record) => $record->status === 'submitted' && $record->pending_with === Auth::user()->employee?->employee_code),
@@ -209,6 +257,12 @@ class AppraisalForm
 
                         // --- Accomplishments ---
                         RichEditor::make('common_evaluation_data.accomplishments')
+                            ->toolbarButtons([
+                                ['italic', 'underline', 'link'],
+                                ['bulletList', 'orderedList'],
+                                ['table'], // The `customBlocks` and `mergeTags` tools are also added here if those features are used.
+
+                            ])
                             ->label('Outstanding accomplishments')
                             ->dehydrated()
                             ->visible(fn($record) => $record->status === 'submitted' && $record->pending_with === Auth::user()->employee?->employee_code),
@@ -246,6 +300,12 @@ class AppraisalForm
 
                         // --- Overall Assessment ---
                         RichEditor::make('common_evaluation_data.overall_assessment')
+                            ->toolbarButtons([
+                                ['italic', 'underline', 'link'],
+                                ['bulletList', 'orderedList'],
+                                ['table'], // The `customBlocks` and `mergeTags` tools are also added here if those features are used.
+
+                            ])
                             ->label('Overall Assessment')
                             ->required()
                             ->dehydrated()
@@ -279,6 +339,12 @@ class AppraisalForm
                             ->visible(fn($record) => $record->status === 'regional_head_review_pending' && $record->pending_with === Auth::user()->employee?->employee_code),
 
                         RichEditor::make('regional_head_assessment_data.comments')
+                            ->toolbarButtons([
+                                ['italic', 'underline', 'link'],
+                                ['bulletList', 'orderedList'],
+                                ['table'], // The `customBlocks` and `mergeTags` tools are also added here if those features are used.
+
+                            ])
                             ->label('Comments')
                             ->dehydrated()
                             ->visible(fn($record) => $record->status === 'regional_head_review_pending' && $record->pending_with === Auth::user()->employee?->employee_code),
@@ -307,6 +373,12 @@ class AppraisalForm
                             ->dehydrated(),
 
                         RichEditor::make('final_assessment_data.disagreement_details')
+                            ->toolbarButtons([
+                                ['italic', 'underline', 'link'],
+                                ['bulletList', 'orderedList'],
+                                ['table'], // The `customBlocks` and `mergeTags` tools are also added here if those features are used.
+
+                            ])
                             ->label('Details of disagreement (if any)')
                             ->visible(fn(Get $get) => $get('final_assessment_data.agree_with_evaluation') === 'No')
                             ->dehydrated()

@@ -44,8 +44,8 @@ class AppraisalInfolist
                     ->description('Employee Self Appraisal')
                     ->schema([
                         TextEntry::make('appraisal_form_data.job_profile')->label('Job Profile')->html()->prose(),
-                        TextEntry::make('appraisal_form_data.satisfaction')->label('Satisfaction')->html()->prose(),
-                        TextEntry::make('appraisal_form_data.profile_modifications')->label('Profile Modifications')->html()->prose(),
+                        TextEntry::make('appraisal_form_data.satisfaction')->label('Job Satisfaction')->html()->prose(),
+                        TextEntry::make('appraisal_form_data.profile_improvements')->label('Profile Improvements')->html()->prose(),
                         TextEntry::make('appraisal_form_data.achievements')->label('Achievements')->html()->prose(),
                         TextEntry::make('appraisal_form_data.performance_gaps')->label('Performance Gaps')->html()->prose(),
                         TextEntry::make('appraisal_form_data.career_goals')->label('Career Goals')->html()->prose(),
