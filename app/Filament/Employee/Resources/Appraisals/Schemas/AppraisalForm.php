@@ -38,19 +38,19 @@ class AppraisalForm
                         TextInput::make('employee_code')->label('Employee Code')->dehydrated()->disabled()
                             ->default(fn() => Auth::user()->employee?->employee_code)
                             ->afterStateHydrated(fn($component, $record) => $component->state($record?->employee_code ?? Auth::user()->employee?->employee_code)),
-                        
+
                         TextInput::make('employee_name')->label('Name')->dehydrated(false)->disabled()
                             ->afterStateHydrated(fn($component, $record) => $component->state($record?->employee?->name ?? Auth::user()->employee?->name)),
-                        
+
                         TextInput::make('designation_name')->label('Designation')->dehydrated(false)->disabled()
                             ->afterStateHydrated(fn($component, $record) => $component->state($record?->designation?->designation ?? Auth::user()->employee?->designation?->designation)),
-                        
+
                         TextInput::make('department_name')->label('Department')->dehydrated(false)->disabled()
                             ->afterStateHydrated(fn($component, $record) => $component->state($record?->department?->department ?? Auth::user()->employee?->department?->department)),
-                        
+
                         TextInput::make('office_name')->label('Office')->dehydrated(false)->disabled()
                             ->afterStateHydrated(fn($component, $record) => $component->state($record?->office?->office ?? Auth::user()->employee?->office?->office)),
-                        
+
                         TextInput::make('basic')->label('Basic Pay')->dehydrated()->disabled()
                             ->default(fn() => Auth::user()->employee?->basic)
                             ->afterStateHydrated(fn($component, $record) => $component->state($record?->basic ?? Auth::user()->employee?->basic)),
@@ -68,15 +68,15 @@ class AppraisalForm
                         RichEditor::make('appraisal_form_data.job_profile')
                             ->label('1. Define your job profile')
                             ->required()
-                            ->visible(fn ($record) => $record === null || $record->status === 'draft')
+                            ->visible(fn($record) => $record === null || $record->status === 'draft')
                             ->columnSpanFull(),
-                        
+
                         Placeholder::make('view_job_profile')
                             ->label('1. Define your job profile')
-                            ->content(fn ($record) => new HtmlString($record->appraisal_form_data['job_profile'] ?? '-'))
-                            ->visible(fn ($record) => $record && $record->status !== 'draft')
+                            ->content(fn($record) => new HtmlString($record->appraisal_form_data['job_profile'] ?? '-'))
+                            ->visible(fn($record) => $record && $record->status !== 'draft')
                             ->columnSpanFull(),
-                        
+
                         // ... (Repeat for all Part A fields) ...
                         ToggleButtons::make('appraisal_form_data.satisfaction')
                             ->label('2. Are you satisfied with your job profile?')
@@ -88,69 +88,69 @@ class AppraisalForm
                             ])
                             ->inline()
                             ->required()
-                            ->visible(fn ($record) => $record === null || $record->status === 'draft')
+                            ->visible(fn($record) => $record === null || $record->status === 'draft')
                             ->columnSpanFull(),
 
                         Placeholder::make('view_satisfaction')
                             ->label('2. Are you satisfied with your job profile?')
-                            ->content(fn ($record) => $record->appraisal_form_data['satisfaction'] ?? '-')
-                            ->visible(fn ($record) => $record && $record->status !== 'draft')
+                            ->content(fn($record) => $record->appraisal_form_data['satisfaction'] ?? '-')
+                            ->visible(fn($record) => $record && $record->status !== 'draft')
                             ->columnSpanFull(),
 
                         RichEditor::make('appraisal_form_data.profile_modifications')
                             ->label('3. What can be modified in your job profile?')
-                            ->visible(fn ($record) => $record === null || $record->status === 'draft')
+                            ->visible(fn($record) => $record === null || $record->status === 'draft')
                             ->columnSpanFull(),
 
                         Placeholder::make('view_profile_modifications')
                             ->label('3. What can be modified in your job profile?')
-                            ->content(fn ($record) => new HtmlString($record->appraisal_form_data['profile_modifications'] ?? '-'))
-                            ->visible(fn ($record) => $record && $record->status !== 'draft')
+                            ->content(fn($record) => new HtmlString($record->appraisal_form_data['profile_modifications'] ?? '-'))
+                            ->visible(fn($record) => $record && $record->status !== 'draft')
                             ->columnSpanFull(),
 
                         RichEditor::make('appraisal_form_data.achievements')
                             ->label('4. Achievements during review period')
                             ->required()
-                            ->visible(fn ($record) => $record === null || $record->status === 'draft')
+                            ->visible(fn($record) => $record === null || $record->status === 'draft')
                             ->columnSpanFull(),
 
                         Placeholder::make('view_achievements')
                             ->label('4. Achievements during review period')
-                            ->content(fn ($record) => new HtmlString($record->appraisal_form_data['achievements'] ?? '-'))
-                            ->visible(fn ($record) => $record && $record->status !== 'draft')
+                            ->content(fn($record) => new HtmlString($record->appraisal_form_data['achievements'] ?? '-'))
+                            ->visible(fn($record) => $record && $record->status !== 'draft')
                             ->columnSpanFull(),
 
                         RichEditor::make('appraisal_form_data.performance_gaps')
                             ->label('5. Areas for improvement & support required')
-                            ->visible(fn ($record) => $record === null || $record->status === 'draft')
+                            ->visible(fn($record) => $record === null || $record->status === 'draft')
                             ->columnSpanFull(),
 
                         Placeholder::make('view_performance_gaps')
                             ->label('5. Areas for improvement & support required')
-                            ->content(fn ($record) => new HtmlString($record->appraisal_form_data['performance_gaps'] ?? '-'))
-                            ->visible(fn ($record) => $record && $record->status !== 'draft')
+                            ->content(fn($record) => new HtmlString($record->appraisal_form_data['performance_gaps'] ?? '-'))
+                            ->visible(fn($record) => $record && $record->status !== 'draft')
                             ->columnSpanFull(),
 
                         RichEditor::make('appraisal_form_data.career_goals')
                             ->label('6. Medium to long-term career goals')
-                            ->visible(fn ($record) => $record === null || $record->status === 'draft')
+                            ->visible(fn($record) => $record === null || $record->status === 'draft')
                             ->columnSpanFull(),
 
                         Placeholder::make('view_career_goals')
                             ->label('6. Medium to long-term career goals')
-                            ->content(fn ($record) => new HtmlString($record->appraisal_form_data['career_goals'] ?? '-'))
-                            ->visible(fn ($record) => $record && $record->status !== 'draft')
+                            ->content(fn($record) => new HtmlString($record->appraisal_form_data['career_goals'] ?? '-'))
+                            ->visible(fn($record) => $record && $record->status !== 'draft')
                             ->columnSpanFull(),
 
                         RichEditor::make('appraisal_form_data.training_needs')
                             ->label('7. Specific training/mentoring required')
-                            ->visible(fn ($record) => $record === null || $record->status === 'draft')
+                            ->visible(fn($record) => $record === null || $record->status === 'draft')
                             ->columnSpanFull(),
 
                         Placeholder::make('view_training_needs')
                             ->label('7. Specific training/mentoring required')
-                            ->content(fn ($record) => new HtmlString($record->appraisal_form_data['training_needs'] ?? '-'))
-                            ->visible(fn ($record) => $record && $record->status !== 'draft')
+                            ->content(fn($record) => new HtmlString($record->appraisal_form_data['training_needs'] ?? '-'))
+                            ->visible(fn($record) => $record && $record->status !== 'draft')
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
@@ -162,7 +162,13 @@ class AppraisalForm
                     ->visible(
                         fn($record) =>
                         Auth::user()->hasAnyRole(['HOD', 'Regional Head', 'Chapter Head', 'DG & CEO']) &&
-                            $record && $record->status !== 'draft'
+                            $record &&
+                            $record->status !== 'draft' &&
+                            Auth::user()->employee?->id !== $record->employee_id // <--- CRITICAL FIX
+                    )
+                    ->disabled(
+                        fn($record) =>
+                        $record && $record->pending_with !== Auth::user()->employee?->employee_code
                     )
                     ->schema([
                         // *** EDIT MODE COMPONENTS (Visible only when Submitted) ***
@@ -171,51 +177,51 @@ class AppraisalForm
                             ->options(['Yes' => 'Yes', 'No' => 'No'])
                             ->required()
                             ->dehydrated()
-                            ->visible(fn ($record) => $record->status === 'submitted' && $record->pending_with === Auth::user()->employee?->employee_code),
+                            ->visible(fn($record) => $record->status === 'submitted' && $record->pending_with === Auth::user()->employee?->employee_code),
 
                         // *** READ-ONLY MODE COMPONENTS (Visible when Review Pending or Closed) ***
                         Placeholder::make('view_agree_with_employee')
                             ->label('Do you agree with the information given by the employee?')
-                            ->content(fn ($record) => $record->common_evaluation_data['agree_with_employee'] ?? '-')
-                            ->visible(fn ($record) => $record->status !== 'submitted'),
+                            ->content(fn($record) => $record->common_evaluation_data['agree_with_employee'] ?? '-')
+                            ->visible(fn($record) => $record->status !== 'submitted'),
 
                         // --- Competency Comparison ---
                         RichEditor::make('common_evaluation_data.competency_comparison')
                             ->label('Job Competencies vis-a-vis others')
                             ->dehydrated()
-                            ->visible(fn ($record) => $record->status === 'submitted' && $record->pending_with === Auth::user()->employee?->employee_code),
-                        
+                            ->visible(fn($record) => $record->status === 'submitted' && $record->pending_with === Auth::user()->employee?->employee_code),
+
                         Placeholder::make('view_competency_comparison')
                             ->label('Job Competencies vis-a-vis others')
-                            ->content(fn ($record) => new HtmlString($record->common_evaluation_data['competency_comparison'] ?? '-'))
-                            ->visible(fn ($record) => $record->status !== 'submitted'),
+                            ->content(fn($record) => new HtmlString($record->common_evaluation_data['competency_comparison'] ?? '-'))
+                            ->visible(fn($record) => $record->status !== 'submitted'),
 
                         // --- Initiative ---
                         RichEditor::make('common_evaluation_data.initiative')
                             ->label('Drive to take initiative and innovation')
                             ->dehydrated()
-                            ->visible(fn ($record) => $record->status === 'submitted' && $record->pending_with === Auth::user()->employee?->employee_code),
+                            ->visible(fn($record) => $record->status === 'submitted' && $record->pending_with === Auth::user()->employee?->employee_code),
 
                         Placeholder::make('view_initiative')
                             ->label('Drive to take initiative and innovation')
-                            ->content(fn ($record) => new HtmlString($record->common_evaluation_data['initiative'] ?? '-'))
-                            ->visible(fn ($record) => $record->status !== 'submitted'),
+                            ->content(fn($record) => new HtmlString($record->common_evaluation_data['initiative'] ?? '-'))
+                            ->visible(fn($record) => $record->status !== 'submitted'),
 
                         // --- Accomplishments ---
                         RichEditor::make('common_evaluation_data.accomplishments')
                             ->label('Outstanding accomplishments')
                             ->dehydrated()
-                            ->visible(fn ($record) => $record->status === 'submitted' && $record->pending_with === Auth::user()->employee?->employee_code),
+                            ->visible(fn($record) => $record->status === 'submitted' && $record->pending_with === Auth::user()->employee?->employee_code),
 
                         Placeholder::make('view_accomplishments')
                             ->label('Outstanding accomplishments')
-                            ->content(fn ($record) => new HtmlString($record->common_evaluation_data['accomplishments'] ?? '-'))
-                            ->visible(fn ($record) => $record->status !== 'submitted'),
+                            ->content(fn($record) => new HtmlString($record->common_evaluation_data['accomplishments'] ?? '-'))
+                            ->visible(fn($record) => $record->status !== 'submitted'),
 
                         // --- Ratings Section (Inputs vs View) ---
                         Section::make('Core Competencies Rating (1-5)')
                             ->columns(2)
-                            ->visible(fn ($record) => $record->status === 'submitted' && $record->pending_with === Auth::user()->employee?->employee_code)
+                            ->visible(fn($record) => $record->status === 'submitted' && $record->pending_with === Auth::user()->employee?->employee_code)
                             ->schema([
                                 self::rating('knowledge', 'Knowledge'),
                                 self::rating('verbal_skills', 'Verbal Skills'),
@@ -228,11 +234,11 @@ class AppraisalForm
                                 self::rating('anticipate_issues', 'Anticipate & Address Issues'),
                                 self::rating('planning', 'Planning & Time Management'),
                             ]),
-                        
+
                         // --- Ratings View (For Reviewer) ---
                         Section::make('Core Competencies Rating (View)')
                             ->columns(2)
-                            ->visible(fn ($record) => $record->status !== 'submitted')
+                            ->visible(fn($record) => $record->status !== 'submitted')
                             ->schema([
                                 Placeholder::make('view_rating_knowledge')->label('Knowledge')->content(fn($record) => $record->common_evaluation_data['ratings']['knowledge'] ?? '-'),
                                 // ... (Add placeholders for other ratings if needed, or just show overall) ...
@@ -243,12 +249,12 @@ class AppraisalForm
                             ->label('Overall Assessment')
                             ->required()
                             ->dehydrated()
-                            ->visible(fn ($record) => $record->status === 'submitted' && $record->pending_with === Auth::user()->employee?->employee_code),
+                            ->visible(fn($record) => $record->status === 'submitted' && $record->pending_with === Auth::user()->employee?->employee_code),
 
                         Placeholder::make('view_overall_assessment')
                             ->label('Overall Assessment')
-                            ->content(fn ($record) => new HtmlString($record->common_evaluation_data['overall_assessment'] ?? '-'))
-                            ->visible(fn ($record) => $record->status !== 'submitted'),
+                            ->content(fn($record) => new HtmlString($record->common_evaluation_data['overall_assessment'] ?? '-'))
+                            ->visible(fn($record) => $record->status !== 'submitted'),
 
                     ])->columnSpanFull(),
 
@@ -270,23 +276,23 @@ class AppraisalForm
                             ->options(['Yes' => 'Yes', 'No' => 'No'])
                             ->required()
                             ->dehydrated()
-                            ->visible(fn ($record) => $record->status === 'regional_head_review_pending' && $record->pending_with === Auth::user()->employee?->employee_code),
+                            ->visible(fn($record) => $record->status === 'regional_head_review_pending' && $record->pending_with === Auth::user()->employee?->employee_code),
 
                         RichEditor::make('regional_head_assessment_data.comments')
                             ->label('Comments')
                             ->dehydrated()
-                            ->visible(fn ($record) => $record->status === 'regional_head_review_pending' && $record->pending_with === Auth::user()->employee?->employee_code),
+                            ->visible(fn($record) => $record->status === 'regional_head_review_pending' && $record->pending_with === Auth::user()->employee?->employee_code),
 
                         // Read-Only Components (When passed to DG)
                         Placeholder::make('view_rh_agree')
                             ->label('Do you agree with the assessment made by the Chapter Head?')
-                            ->content(fn ($record) => $record->regional_head_assessment_data['agree_with_chapter_head'] ?? '-')
-                            ->visible(fn ($record) => $record->status !== 'regional_head_review_pending'),
+                            ->content(fn($record) => $record->regional_head_assessment_data['agree_with_chapter_head'] ?? '-')
+                            ->visible(fn($record) => $record->status !== 'regional_head_review_pending'),
 
                         Placeholder::make('view_rh_comments')
                             ->label('Comments')
-                            ->content(fn ($record) => new HtmlString($record->regional_head_assessment_data['comments'] ?? '-'))
-                            ->visible(fn ($record) => $record->status !== 'regional_head_review_pending'),
+                            ->content(fn($record) => new HtmlString($record->regional_head_assessment_data['comments'] ?? '-'))
+                            ->visible(fn($record) => $record->status !== 'regional_head_review_pending'),
                     ])->columnSpanFull(),
 
                 // --- 5. FINAL ASSESSMENT (DG & CEO) ---
@@ -323,6 +329,6 @@ class AppraisalForm
             ->label($label)
             ->options([1 => '1 - Minimum', 2 => '2', 3 => '3', 4 => '4', 5 => '5 - Maximum'])
             ->native(false)
-            ->dehydrated(); 
+            ->dehydrated();
     }
 }

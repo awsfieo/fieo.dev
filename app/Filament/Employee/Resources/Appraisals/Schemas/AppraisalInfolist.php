@@ -56,8 +56,13 @@ class AppraisalInfolist
                 Section::make('Common Evaluation (Part B)')
                     ->description('Confidential Evaluation by Reporting Officer')
                     ->visible(
-                        fn($record) =>
-                        Auth::user()->hasAnyRole(['HOD', 'Regional Head', 'Chapter Head', 'DG & CEO']) ||
+                        fn($record) => (
+                            // Condition 1: Must have a Supervisor Role AND NOT be the Employee itself
+                            Auth::user()->hasAnyRole(['HOD', 'Regional Head', 'Chapter Head', 'DG & CEO'])
+                            && Auth::user()->employee?->id !== $record->employee_id // <--- CRITICAL FIX
+                        )
+                            ||
+                            // Condition 2: OR the appraisal is released (visible to everyone)
                             $record->is_released
                     )
                     ->schema([
