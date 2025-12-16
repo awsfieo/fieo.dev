@@ -77,37 +77,64 @@ class UpdateApprovedApplicationData implements ShouldQueue
             Log::info("Pass 1 Complete: {$newRecordsCount} non-duplicate records copied to master table with NULL keys.");
 
 
-            // --- PASS 2: LOOKUP AND UPDATE (Only process newly inserted records with missing IDs) ---
+            // --- PASS 2: LOOKUP AND UPDATE (Decoupled Logic) ---
 
             $unlinkedRecords = RcmcApprovedApplication::whereNull('office_id')
                 ->orWhereNull('employee_code')
                 ->cursor();
 
-            // FIX: Using Model type hint in foreach for Linter compatibility
             /** @var RcmcApprovedApplication $record */
             foreach ($unlinkedRecords as $record) {
+                
+                $updates = [];
 
-                $officeId = $record->office_id ?? $this->getOfficeId($record->office);
-                $employeeCode = $record->employee_code ?? $this->getEmployeeCode($record->closed_by, $record->iec);
-
-                if (is_null($officeId) || is_null($employeeCode)) {
-
-                    $this->skippedLookups[] = [
-                        'iec' => $record->iec,
-                        'reason' => is_null($officeId) ? 'Office Missing' : 'Employee Missing',
-                        'raw_name' => $record->closed_by,
-                        'raw_office' => $record->office,
-                    ];
-
-                    continue;
+                // --- 1. Handle Office Lookup ---
+                // If the record already has an ID, use it. Otherwise, try looking it up.
+                if ($record->office_id) {
+                    // Already exists, no update needed for this field
+                    $officeId = $record->office_id;
+                } else {
+                    $officeId = $this->getOfficeId($record->office);
+                    
+                    if ($officeId) {
+                        $updates['office_id'] = $officeId;
+                    } else {
+                        // Log failure only if we tried to look it up and failed
+                        $this->skippedLookups[] = [
+                            'iec' => $record->iec,
+                            'reason' => 'Office Missing', // Specific reason
+                            'raw_name' => $record->closed_by,
+                            'raw_office' => $record->office,
+                        ];
+                    }
                 }
 
-                $record->update([
-                    'office_id' => $officeId,
-                    'employee_code' => $employeeCode,
-                ]);
+                // --- 2. Handle Employee Lookup ---
+                // If the record already has a code, use it. Otherwise, try looking it up.
+                if ($record->employee_code) {
+                    // Already exists, no update needed for this field
+                    $employeeCode = $record->employee_code;
+                } else {
+                    $employeeCode = $this->getEmployeeCode($record->closed_by, $record->iec);
 
-                $processedLookupsCount++;
+                    if ($employeeCode) {
+                        $updates['employee_code'] = $employeeCode;
+                    } else {
+                        // Log failure only if we tried to look it up and failed
+                        $this->skippedLookups[] = [
+                            'iec' => $record->iec,
+                            'reason' => 'Employee Missing', // Specific reason
+                            'raw_name' => $record->closed_by,
+                            'raw_office' => $record->office,
+                        ];
+                    }
+                }
+
+                // --- 3. Perform Update if ANY data was found ---
+                if (!empty($updates)) {
+                    $record->update($updates);
+                    $processedLookupsCount++;
+                }
             }
         });
 
@@ -198,47 +225,57 @@ class UpdateApprovedApplicationData implements ShouldQueue
 
     private function getEmployeeCode(string $rawClosedBy, string $iec): ?string
     {
+        // 1. Clean the input string
         $namePart = explode(',', $rawClosedBy)[0];
         $cleanName = trim(Str::squish($namePart));
         $upperName = Str::upper($cleanName);
 
-        $employee = null;
-
-        // --- Step 1: HARDCODED MAPPING (The final rule to ensure zero skips for known names) ---
-        // NOTE: The value in the array (e.g., 'DanishCode') should be the actual employee_code
-        // for the employee in your master 'employees' table.
-        $hardcodedMapping = [
-            // Raw Name from Excel -> Cleaned Name from Lookup (e.g., Danisha Minu D M -> DANISHA MINU D M)
-            'DANISHA MINU DANIEL VICTOR MERLIN' => 'Danisha Minu Employee Code', // Replace with Danisha Minu's actual code
-
-            // Raw Name from Excel -> Cleaned Name from Lookup (e.g., S SELVANAYAGI VIJAYKUMAR -> S SELVANAYAGI VIJAYKUMAR)
-            'SENNIAPPAN SELVANAYAGI' => 'Selvanayagi M S Employee Code', // Replace with Selvanayagi M S's actual code
+        // --- Step 1: NAME EXCEPTION MAPPING ---
+        // Map the "Wrong/Long Name" from Excel to the "Correct Name" in your Database.
+        $nameExceptions = [
+            // 'EXCEL NAME (UPPERCASE)' => 'Database Name (Exact Match)'
+            'DANISHA MINU DANIEL VICTOR MERLIN' => 'Danisha Minu',
+            'SENNIAPPAN SELVANAYAGI'            => 'Selvanayagi M S',
         ];
 
-        if (isset($hardcodedMapping[$upperName])) {
-            // We found a direct, hardcoded match for a known problematic name.
-            Log::debug("Employee Lookup: Found HARDCODED exception for {$upperName}. Code={$hardcodedMapping[$upperName]}");
-            return $hardcodedMapping[$upperName];
+        // Check if this name is in our exception list
+        if (isset($nameExceptions[$upperName])) {
+            $targetDbName = $nameExceptions[$upperName];
+
+            // Perform a specific lookup using the corrected name
+            $employee = Employee::where('name', $targetDbName)->first();
+
+            if ($employee) {
+                Log::debug("Employee Lookup: Mapped exception '{$upperName}' to DB entry '{$targetDbName}'. Found Code: {$employee->employee_code}");
+                return $employee->employee_code; // Returns '0293' or whatever is in the DB
+            }
+
+            Log::warning("Employee Lookup: Mapped '{$upperName}' to '{$targetDbName}', but '{$targetDbName}' does not exist in the employees table.");
+            // Optional: Return null here, or let it fall through to fuzzy search
         }
 
         // ----------------------------------------------------------------------
-        // --- Steps 2 & 3: AGGRESSIVE FUZZY LOOKUP (For all other non-hardcoded names) ---
+        // --- Steps 2 & 3: AGGRESSIVE FUZZY LOOKUP (For all regular names) ---
         // ----------------------------------------------------------------------
 
-        // Aggressive cleaning: Remove all whitespace and non-alphanumeric characters from the Excel input name
+        $employee = null;
+
+        // Aggressive cleaning: Remove all whitespace and non-alphanumeric characters
+        // e.g. "Danisha Minu" becomes "DANISHAMINU"
         $searchKey = preg_replace('/[^A-Z0-9]/', '', $upperName);
 
-        // 2. PRIMARY LOOKUP: Search on 'name' column (Cleaned)
+        // 2. PRIMARY LOOKUP: Search on 'name' column
+        // Matches "Danisha Minu" in DB against search key "DANISHAMINU"
         $employee = Employee::where(DB::raw("REPLACE(UPPER(name), ' ', '')"), 'LIKE', "%{$searchKey}%")
             ->first();
 
-        // 3. FALLBACK LOOKUP: Search on 'aadhar_name' column (Cleaned)
+        // 3. FALLBACK LOOKUP: Search on 'aadhar_name' column
         if (is_null($employee)) {
             $employee = Employee::where(DB::raw("REPLACE(UPPER(aadhar_name), ' ', '')"), 'LIKE', "%{$searchKey}%")
                 ->first();
         }
 
-        // If the aggressive lookup failed for non-hardcoded names, log the failure.
+        // Log failure if still null
         if (is_null($employee)) {
             Log::error("FINAL LOOKUP FAILURE: No match found for raw name '{$rawClosedBy}' (Search Key: {$searchKey}). IEC: {$iec}.");
         }
