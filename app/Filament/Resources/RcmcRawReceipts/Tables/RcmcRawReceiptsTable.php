@@ -17,13 +17,13 @@ class RcmcRawReceiptsTable
             ->columns([
                 TextColumn::make('receipt_date')
                     ->label('Date')
+                    ->date()
                     ->sortable(),
                     
                 TextColumn::make('receipt_number')
                     ->label('Receipt #')
                     ->searchable()
-                    ->sortable()
-                    ->weight('bold'),
+                    ->sortable(),
 
                 TextColumn::make('company_name')
                     ->label('Company')

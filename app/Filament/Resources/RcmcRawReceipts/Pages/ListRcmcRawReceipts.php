@@ -3,13 +3,12 @@
 namespace App\Filament\Resources\RcmcRawReceipts\Pages;
 
 use App\Filament\Resources\RcmcRawReceipts\RcmcRawReceiptResource;
-use App\Imports\RcmcRawReceiptImport;
+use App\Jobs\ProcessReceipts; // <--- The new short job name
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Forms\Components\FileUpload;
 use Filament\Notifications\Notification;
-use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class ListRcmcRawReceipts extends ListRecords
 {
@@ -18,51 +17,39 @@ class ListRcmcRawReceipts extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            // CreateAction removed to match Approved Applications
-            
-            Actions\Action::make('importExcel')
-                ->label('Import Receipts')
+            Actions\Action::make('uploadExcel')
+                ->label('Upload Receipts')
                 ->icon('heroicon-o-arrow-up-tray')
-                ->color('success')
                 ->form([
                     FileUpload::make('attachment')
-                        ->label('Upload Excel File')
-                        ->helperText('Supported formats: .xlsx, .csv. Max size: 50MB.')
-                        ->disk('local')
-                        ->directory('temp-imports')
-                        ->visibility('private')
-                        ->acceptedFileTypes([
-                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
-                            'application/vnd.ms-excel', 
-                            'text/csv'
-                        ])
-                        ->maxSize(51200) // 50MB limit
-                        ->required(),
+                        ->label('Choose Excel File')
+                        ->disk('local') 
+                        ->directory('temp-uploads')
+                        ->required()
+                        ->storeFiles(true)
+                        ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/csv'])
+                        ->maxSize(51200), // 50MB
                 ])
                 ->action(function (array $data) {
-                    $path = Storage::disk('local')->path($data['attachment']);
+                    $uploadedFilePath = $data['attachment'];
 
-                    try {
-                        Excel::import(new RcmcRawReceiptImport, $path);
-
+                    if (empty($uploadedFilePath)) {
                         Notification::make()
-                            ->title('Receipts Imported Successfully')
-                            ->success()
-                            ->send();
-
-                        // Cleanup temp file
-                        if(file_exists($path)) {
-                            unlink($path);
-                        }
-
-                    } catch (\Exception $e) {
-                        Notification::make()
-                            ->title('Import Failed')
-                            ->body($e->getMessage())
+                            ->title('Upload Failed')
+                            ->body('No file was found in the attachment field.')
                             ->danger()
-                            ->persistent()
                             ->send();
+                        return;
                     }
+
+                    // Dispatch the job immediately
+                    ProcessReceipts::dispatch($uploadedFilePath, Auth::id()); 
+
+                    Notification::make()
+                        ->title('Processing Started')
+                        ->body('Your file upload is running in the background. You will receive a notification upon completion.')
+                        ->warning()
+                        ->send();
                 }),
         ];
     }
