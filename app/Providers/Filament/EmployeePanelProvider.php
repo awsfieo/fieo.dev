@@ -18,6 +18,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Filament\Support\Enums\Width;
 
 class EmployeePanelProvider extends PanelProvider
 {
@@ -30,6 +31,10 @@ class EmployeePanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Blue,
             ])
+            ->maxContentWidth(Width::Full)
+            ->spa()
+            ->spa(hasPrefetching: true)
+            ->unsavedChangesAlerts()
             ->discoverResources(in: app_path('Filament/Employee/Resources'), for: 'App\Filament\Employee\Resources')
             ->discoverPages(in: app_path('Filament/Employee/Pages'), for: 'App\Filament\Employee\Pages')
             ->pages([
@@ -54,6 +59,6 @@ class EmployeePanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-            ->brandName('FIEO · Employee');
+            ->brandName('FIEO Employee');
     }
 }

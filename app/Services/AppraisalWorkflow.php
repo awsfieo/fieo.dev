@@ -116,7 +116,7 @@ class AppraisalWorkflow
         }
 
         // 2. Regional Office (RO) -> Goes to Regional Head
-        if ($officeType === 'RO' || str_contains(strtolower($employee->office?->office ?? ''), 'regional')) {
+        if ($officeType === 'RO' || str_contains(strtolower($employee->office?->office ?? ''), 'region')) {
             return $this->findRoleInScope('Regional Head', region: $region);
         }
 

@@ -225,9 +225,12 @@ class AppraisalForm
                     )
                     ->schema([
                         // *** EDIT MODE COMPONENTS (Visible only when Submitted) ***
-                        Radio::make('common_evaluation_data.agree_with_employee')
+                        ToggleButtons::make('common_evaluation_data.agree_with_employee')
                             ->label('Do you agree with the information given by the employee?')
                             ->options(['Yes' => 'Yes', 'No' => 'No'])
+                            ->columns(8)
+                            ->colors(['Yes' => 'success', 'No' => 'danger'])
+                            ->icons(['Yes' => 'heroicon-o-hand-thumb-up', 'No' => 'heroicon-o-hand-thumb-down'])
                             ->required()
                             ->dehydrated()
                             ->visible(fn($record) => $record->status === 'submitted' && $record->pending_with === Auth::user()->employee?->employee_code),
