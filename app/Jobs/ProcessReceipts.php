@@ -13,6 +13,7 @@ use Illuminate\Queue\SerializesModels;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
 use Filament\Notifications\Notification;
+use App\Jobs\UpdateReceiptsData;
 
 class ProcessReceipts implements ShouldQueue
 {
@@ -43,7 +44,7 @@ class ProcessReceipts implements ShouldQueue
             Excel::import(new RcmcRawReceiptImport, $this->filePath);
 
             // 3. Dispatch the final processing job (We will create this later)
-            // UpdateReceiptsData::dispatch($this->adminUserId); 
+            UpdateReceiptsData::dispatch($this->adminUserId); 
 
             // 4. Send success notification
             Notification::make()
