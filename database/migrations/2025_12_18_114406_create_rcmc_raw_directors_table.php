@@ -11,12 +11,12 @@ return new class extends Migration
         Schema::create('rcmc_raw_directors', function (Blueprint $table) {
             $table->id();
             // All columns strictly nullable strings (dumping ground)
-            $table->string('iec')->nullable();
+            $table->string('iec')->nullable()->index();
             $table->string('pan')->nullable();
             $table->string('company_name')->nullable();
             $table->string('epc_short_name')->nullable();
-            $table->string('doe')->nullable(); // Date of Establishment (from DOB)
-            $table->string('iec_issue_date')->nullable();
+            $table->date('doe')->nullable(); // Date of Establishment (from DOB)
+            $table->date('iec_issue_date')->nullable();
             $table->string('nature_of_concern')->nullable();
             $table->string('name')->nullable();
             $table->string('branch_code')->nullable();
@@ -26,7 +26,7 @@ return new class extends Migration
             $table->text('all_branch')->nullable();
             $table->string('file_number')->nullable();
             $table->string('rcmc_number')->nullable();
-            $table->string('rcmc_issue_date')->nullable();
+            $table->date('rcmc_issue_date')->nullable();
             $table->timestampsTz();
         });
     }

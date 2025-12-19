@@ -35,6 +35,9 @@ return new class extends Migration
             // Additional Business Columns (Nullable)
             $table->string('din')->nullable();
             $table->string('director_pan')->nullable();
+            $table->string('salutation')->nullable();
+            $table->string('gender')->nullable();
+            $table->string('dob')->nullable();
             $table->string('designation')->nullable();
             $table->string('email')->nullable();
             $table->string('mobile')->nullable();

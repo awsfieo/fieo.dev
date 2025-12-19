@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('file_number')->nullable()->index();
             $table->string('rcmc_number')->nullable();
             $table->string('application_type')->nullable();
-            $table->string('status')->nullable();
+            $table->string('application_status')->nullable();
             $table->string('closed_by')->nullable();
             $table->string('office')->nullable();
             $table->timestampsTz();

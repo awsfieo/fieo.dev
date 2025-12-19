@@ -257,7 +257,7 @@ export default function Welcome() {
                                 FIEO digital experience shall welcome members,
                                 non-members, employees and partners into a
                                 single, secure, unified ecosystem powered by
-                                modern technologies
+                                modern web stack
                             </p>
 
                             <div className="flex flex-wrap gap-2 text-[11px]">
@@ -360,7 +360,7 @@ export default function Welcome() {
                                 ].join(' ')}
                             >
                                 Each stakeholder shall access their unique
-                                dashboard with relevant information, in a
+                                dashboard with relevant features, in a
                                 user-friendly environment
                             </p>
                         </div>
@@ -496,8 +496,7 @@ export default function Welcome() {
                                             : 'text-slate-500',
                                     ].join(' ')}
                                 >
-                                    This panel may evolve into a live data
-                                    visualisation, export heatmap, or a dynamic
+                                    This panel may evolve into a dynamic
                                     FIEO notice board showcasing real-time
                                     updates, announcements, and important
                                     notifications.
@@ -872,7 +871,7 @@ export default function Welcome() {
 
                 {/* Journey section continues*/}
                 <section
-                    id="journey"
+                    id="preview"
                     className="mx-auto mt-10 w-full max-w-6xl"
                 >
                     <Tabs
@@ -1870,9 +1869,7 @@ export default function Welcome() {
                             </h3>
                             <p className="mt-2 max-w-xl">
                                 This page is a design prototype only. Each
-                                section will be backed by Laravel APIs,
-                                Filament-based back office panels and secure
-                                integrations with DGFT and other partners.
+                                section will be developed into content rich segments backed by Laravel APIs and React JS Front end
                             </p>
                         </div>
                         <div className="grid gap-3 sm:grid-cols-3">
@@ -1894,9 +1891,9 @@ export default function Welcome() {
                                 >
                                     Phase 1
                                 </p>
-                                <p className="mt-1 font-medium">Core portals</p>
+                                <p className="mt-1 font-medium">Core panels</p>
                                 <p className="mt-1 text-[11px]">
-                                    Members, non-members and employee panels.
+                                    Members, non-members and employee panels
                                 </p>
                             </div>
                             <div
@@ -1921,7 +1918,7 @@ export default function Welcome() {
                                     Deep integrations
                                 </p>
                                 <p className="mt-1 text-[11px]">
-                                    DGFT, NDML, airport partners and analytics.
+                                    DGFT, Payment Gateway, partners and other stakeholders
                                 </p>
                             </div>
                             <div
@@ -1946,7 +1943,7 @@ export default function Welcome() {
                                     Smart recommendations
                                 </p>
                                 <p className="mt-1 text-[11px]">
-                                    AI-assisted policy feedback and opportunity
+                                    AI-assisted policy updates and opportunity
                                     discovery.
                                 </p>
                             </div>
@@ -1959,10 +1956,8 @@ export default function Welcome() {
                             isDark ? 'text-slate-500' : 'text-slate-500',
                         ].join(' ')}
                     >
-                        Internal note: This is a design-only preview built on
-                        the existing React + ShadCN boilerplate. All navigation
-                        items, metrics and content are placeholders and can be
-                        aligned with final requirements.
+                        Important Note: This is a design-only preview. All navigation
+                        items, metrics and content are placeholders just for demonstration purposes.
                     </p>
                 </section>
             </div>
