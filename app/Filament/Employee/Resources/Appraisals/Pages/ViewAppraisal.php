@@ -8,10 +8,27 @@ use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
+use Illuminate\Contracts\Support\Htmlable;
+use App\Models\Appraisal;
+
 
 class ViewAppraisal extends ViewRecord
 {
     protected static string $resource = AppraisalResource::class;
+
+    public function mount(int | string $record): void
+    {
+        parent::mount($record);
+
+        // This bypasses any in-memory caching on the existing model instance
+        $this->record = $this->getRecord()->fresh();
+    }
+
+    public function getTitle(): string | Htmlable
+    {
+        // Uses the relationship to get the real name
+        return $this->getRecord()->employee->name ?? 'View Appraisal';
+    }
 
     protected function getHeaderActions(): array
     {
@@ -19,17 +36,17 @@ class ViewAppraisal extends ViewRecord
             // 1. SUBMIT ACTION (For Employee - Draft Only)
             Actions\Action::make('submit')
                 ->label('Submit Appraisal')
-                ->color('success')
+                ->color('warning')
                 ->icon('heroicon-m-paper-airplane')
-                ->visible(fn ($record) => 
-                    $record->status === 'draft' && 
-                    $record->employee_id === Auth::user()->employee?->id
+                ->visible(
+                    fn($record) =>
+                    $record->status === 'draft' &&
+                        $record->employee_id === Auth::user()->employee?->id
                 )
                 ->requiresConfirmation()
                 ->modalHeading('Submit Appraisal?')
-                ->modalDescription('This will lock the Appraisal Form and forward it to your Reporting Officer. 
-                You will not be able to edit the form after submission and only one Appraisal form can be submitted per year.
-                So be sure before you proceed.')
+                ->modalDescription('Only one appraisal form can be submitted in a year. After the Appraisal Form is submitted, it will be locked and cannot be edited or recalled back. 
+                Therefore, ensure that all information provided is accurate and complete before proceeding.') 
                 ->action(function (AppraisalWorkflow $workflow) {
                     $workflow->submit($this->getRecord());
                     Notification::make()->title('Appraisal Submitted Successfully')->success()->send();
@@ -38,39 +55,45 @@ class ViewAppraisal extends ViewRecord
 
             // 2. EDIT ACTION (Draft Only)
             Actions\EditAction::make()
-                ->visible(fn ($record) => $record->status === 'draft'),
+                ->visible(fn($record) => $record->status === 'draft'),
 
             // 3. ASSESS ACTION (Reporting Officer)
             Actions\Action::make('assess')
                 ->label('Fill Assessment')
                 ->color('warning')
                 ->icon('heroicon-m-pencil-square')
-                ->visible(fn ($record) => 
-                    $record->status === 'submitted' && 
-                    $record->pending_with === Auth::user()->employee?->employee_code
+                ->visible(
+                    fn($record) =>
+                    $record->status === 'submitted' &&
+                        $record->pending_with === Auth::user()->employee?->employee_code
                 )
                 // Redirect to Edit page to fill Form B
-                ->url(fn ($record) => $this->getResource()::getUrl('edit', ['record' => $record])),
+                ->url(fn($record) => $this->getResource()::getUrl('edit', ['record' => $record]) . '?tab=evaluation-form'),
 
             // 4. REGIONAL REVIEW ACTION
             Actions\Action::make('regional_review')
-                ->label('Regional Review')
-                ->color('orange')
-                ->visible(fn ($record) => 
-                    $record->status === 'regional_head_review_pending' && 
-                    $record->pending_with === Auth::user()->employee?->employee_code
+                ->label('Regional Head Review')
+                ->color('warning')
+                ->icon('heroicon-m-pencil-square')
+                ->visible(
+                    fn($record) =>
+                    $record->status === 'regional_head_review_pending' &&
+                        $record->pending_with === Auth::user()->employee?->employee_code
                 )
-                ->url(fn ($record) => $this->getResource()::getUrl('edit', ['record' => $record])),
+                ->url(fn($record) => $this->getResource()::getUrl('edit', ['record' => $record]) . '?tab=regional-head-review'),
 
             // 5. FINALIZE (DG)
             Actions\Action::make('finalize')
-                ->label('Finalize')
-                ->color('primary')
-                ->visible(fn ($record) => 
-                    $record->status === 'final_review_pending' && 
-                    Auth::user()->hasRole('DG & CEO')
+                ->label('Final Assessment')
+                ->icon('heroicon-m-pencil-square')
+                ->color('warning')
+                ->visible(
+                    fn($record) =>
+                    $record->status === 'final_assessment_pending' &&
+                        Auth::user()->hasRole('DG & CEO')
                 )
-                ->url(fn ($record) => $this->getResource()::getUrl('edit', ['record' => $record])),
+                ->url(fn($record) => $this->getResource()::getUrl('edit', ['record' => $record]) . '?tab=final-assessment'),
+            
         ];
     }
 }

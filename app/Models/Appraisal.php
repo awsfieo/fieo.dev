@@ -12,8 +12,8 @@ class Appraisal extends Model
 
     protected $casts = [
         'appraisal_form_data'           => 'encrypted:array',
-        'common_evaluation_data'        => 'encrypted:array',
-        'regional_head_assessment_data' => 'encrypted:array',
+        'evaluation_form_data'          => 'encrypted:array',
+        'regional_head_review_data'     => 'encrypted:array',
         'final_assessment_data'         => 'encrypted:array',
         'final_increment'               => 'encrypted',
         'file_history'                  => 'array',
@@ -52,7 +52,7 @@ class Appraisal extends Model
             // 3. Generate Application No
             if (empty($model->application_no)) {
                 $year = $model->appraisal_year ?? date('Y');
-                $cycle = strtoupper(substr($model->appraisal_cycle ?? 'APR', 0, 3));
+                $month = strtoupper(substr($model->appraisal_month ?? 'APR', 0, 3));
 
                 // Fallback if employee code is still somehow missing
                 $empSuffix = $model->employee_code
@@ -60,7 +60,7 @@ class Appraisal extends Model
                     : 'TMP-' . rand(1000, 9999);
 
                 // Format: APR/2025/APR/0052
-                $model->application_no = "APR/{$year}/{$cycle}/{$empSuffix}";
+                $model->application_no = "APR/{$year}/{$month}/{$empSuffix}";
             }
         });
     }
@@ -97,7 +97,7 @@ class Appraisal extends Model
             'submitted' => 'warning',
             'evaluation_pending' => 'warning',
             'regional_head_review_pending' => 'orange',
-            'final_review_pending' => 'primary',
+            'final_assessment_pending' => 'primary',
             'closed' => 'success',
             default => 'gray',
         };

@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use App\Models\User;
+use App\Models\Employee;
 use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
@@ -46,6 +47,7 @@ class DatabaseSeeder extends Seeder
         $this->seedDepartments();
         $this->seedEmployees();
         $this->seedCurrentAllocations();
+        $this->seedEmployeeAppraisals();
     }
 
     private function seedUsers(): void
@@ -160,7 +162,7 @@ class DatabaseSeeder extends Seeder
 
                 // 8. HOD
                 $hods = [
-                    'apsrivastava@fieo.org',
+                    'vikasmittal@fieo.org',
                     'dhananjay@fieo.org',
                     'nirmalatete@fieo.org',
                     'niteshmishra@fieo.org',
@@ -660,7 +662,7 @@ class DatabaseSeeder extends Seeder
                 $gender = null;
             }
 
-
+            $appraisalMonth = $get($row, 'appraisal_month');
             $basic   = $get($row, 'basic');
             $email   = strtolower($get($row, 'email') ?: '');
             $mobile  = $get($row, 'mobile');
@@ -698,6 +700,7 @@ class DatabaseSeeder extends Seeder
                 'office_id'      => $oid,
 
                 'status'      => $status,
+                'appraisal_month' => $appraisalMonth ?: null,
                 'basic'       => $basic ?: null,
 
                 // chain set in pass 2
@@ -751,6 +754,7 @@ class DatabaseSeeder extends Seeder
                     'department_id',
                     'office_id',
                     'status',
+                    'appraisal_month',
                     'basic',
                     'email',
                     'mobile',
@@ -907,6 +911,57 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->command->info("Seeded Allocations: $deptCount depts, $desgCount desgs, $basicCount basic pay records.");
+    }
+
+    /**
+     * NEW FUNCTION: Populates employee_appraisals for the current year
+     */
+    private function seedEmployeeAppraisals(): void
+    {
+        if (! Schema::hasTable('employee_appraisals')) {
+            $this->command?->warn("Table 'employee_appraisals' not found. Skipping.");
+            return;
+        }
+
+        $currentYear = date('Y');
+        $count = 0;
+
+        // 1. Fetch eligible employees (Confirmed, Probation, Contractual)
+        $eligibleEmployees = Employee::query()
+            ->whereIn('status', ['confirmed', 'probation', 'contractual'])
+            ->get();
+
+        foreach ($eligibleEmployees as $employee) {
+            // 2. Check for duplicates for the current year
+            $exists = DB::table('employee_appraisals')
+                ->where('employee_code', $employee->employee_code)
+                ->where('appraisal_year', $currentYear)
+                ->exists();
+
+            if (! $exists) {
+                // 3. Determine Appraisal Cycle (Default to April if not set)
+                // Note: Ensure your employees table has 'appraisal_month' or use default
+                $month = $employee->appraisal_month ?? 'April';
+
+                DB::table('employee_appraisals')->insert([
+                    'employee_id'       => $employee->id,
+                    'appraisal_id'      => null, // Nullable until workflow creates one
+                    'employee_code'     => $employee->employee_code,
+                    'name'              => $employee->name,
+                    'appraisal_year'    => $currentYear,
+                    'appraisal_month'   => $month,
+                    'status'            => 'Pending',
+                    'increment_granted' => false, // Default boolean false
+                    'increment_percentage' => null,
+                    'created_at'        => now(),
+                    'updated_at'        => now(),
+                ]);
+
+                $count++;
+            }
+        }
+
+        $this->command?->info("Employee Appraisals seeded: $count records created for $currentYear.");
     }
 
     private function toBool($value, bool $default = true): bool

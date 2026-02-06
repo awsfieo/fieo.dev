@@ -25,7 +25,7 @@ return new class extends Migration
 
             // --- Period & Cycle ---
             $table->integer('appraisal_year')->index(); 
-            $table->enum('appraisal_cycle', ['April', 'October'])->index();
+            $table->enum('appraisal_month', ['April', 'October'])->index();
 
             // --- Workflow Status ---
             $table->string('status', 32)->default('draft')->index();
@@ -42,8 +42,8 @@ return new class extends Migration
 
             // --- DATA COLUMNS (Encrypted) ---
             $table->longText('appraisal_form_data')->nullable(); 
-            $table->longText('common_evaluation_data')->nullable();
-            $table->longText('regional_head_assessment_data')->nullable();
+            $table->longText('evaluation_form_data')->nullable();
+            $table->longText('regional_head_review_data')->nullable();
             $table->longText('final_assessment_data')->nullable();
 
             // --- Outcome ---
@@ -56,7 +56,7 @@ return new class extends Migration
             $table->timestampsTz();
 
             // Constraints
-            $table->unique(['employee_id', 'appraisal_year', 'appraisal_cycle']); 
+            $table->unique(['employee_id', 'appraisal_year', 'appraisal_month']); 
         });
     }
 

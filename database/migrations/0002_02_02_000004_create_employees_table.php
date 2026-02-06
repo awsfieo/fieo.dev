@@ -32,6 +32,8 @@ return new class extends Migration {
 
             // Employment (CSV: status, grade)
             $table->string('status', 20)->default('confirmed'); // confirmed|contractual|probation|retired|resigned
+            $table->enum('appraisal_month', ['April', 'October'])
+                  ->default('April'); // Month in which annual appraisal is done
             $table->string('basic', 32)->nullable();
 
             // Reporting & approvals (CSV: supervisor, manager, approver) -> reference employees(emp_id)

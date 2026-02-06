@@ -43,7 +43,7 @@ class EmployeeForm
                     ->native(false),
                 DatePicker::make('dob'),
                 DatePicker::make('doj'),
-          
+
                 Select::make('designation_id')
                     ->label('Designation')
                     ->options(\App\Models\Designation::query()->orderBy('sort_id')->pluck('designation', 'id'))
@@ -84,12 +84,12 @@ class EmployeeForm
                     ->preload()
                     ->native(false),
 
-                Select::make('manager_code')
-                    ->label('Manager')
-                    ->options(\App\Models\Employee::query()->orderBy('name')->pluck('name', 'employee_code'))
-                    ->searchable()
-                    ->preload()
-                    ->native(false),
+                Select::make('appraisal_month')
+                    ->options([
+                        'April' => 'April',
+                        'October' => 'October',
+                    ])
+                    ->default('April'),
 
                 Select::make('approver_code')
                     ->label('Approver')

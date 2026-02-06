@@ -2,15 +2,14 @@
 
 namespace App\Jobs;
 
-use App\Models\RcmcDirector;
-use App\Models\RcmcReceipt;
-use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use App\Models\User;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class UpdateReceiptsIec implements ShouldQueue
@@ -26,56 +25,61 @@ class UpdateReceiptsIec implements ShouldQueue
 
     public function handle(): void
     {
-        Log::info('UpdateReceiptsIec Job Started.');
+        // 1. Force Infinite Limits
+        set_time_limit(0);
+        ini_set('memory_limit', '-1');
 
-        $updatedCount = 0;
-        $missingCount = 0;
+        Log::info('UpdateReceiptsIec Job Started (CTE Mode).');
 
-        // 1. UPDATED QUERY: Check for NULL OR Empty String
-        RcmcReceipt::query()
-            ->where(function ($query) {
-                $query->whereNull('iec')
-                      ->orWhere('iec', '=')
-                      ->orWhere('iec', '');
-            })
-            ->whereNotNull('gstin')
-            ->where('gstin', '!=', '') // Ensure GSTIN itself isn't empty
-            ->chunk(500, function ($receipts) use (&$updatedCount, &$missingCount) {
+        // 2. The "Silver Bullet" Query
+        // We use a CTE ('valid_directors') to create a perfect, unique list of PANs first.
+        // Then we update the receipts from that clean list.
+        $query = "
+            WITH valid_directors AS (
+                SELECT DISTINCT ON (pan) 
+                    pan, 
+                    iec
+                FROM rcmc_directors
+                WHERE iec IS NOT NULL 
+                  AND LENGTH(TRIM(iec)) = 10
+                  AND pan IS NOT NULL 
+                  AND LENGTH(TRIM(pan)) = 10
+            )
+            UPDATE rcmc_receipts r
+            SET iec = vd.iec
+            FROM valid_directors vd
+            WHERE 
+                -- Target: Broken Receipts
+                (r.iec IS NULL OR r.iec = '') 
+                AND r.gstin IS NOT NULL 
+                AND LENGTH(TRIM(r.gstin)) = 15
                 
-                foreach ($receipts as $receipt) {
-                    // 2. Data Cleaning: Trim spaces from GSTIN before searching
-                    $cleanGstin = trim($receipt->gstin);
+                -- Match: Extracted Receipt PAN == Director PAN
+                AND vd.pan = SUBSTRING(TRIM(r.gstin), 3, 10);
+        ";
 
-                    if (empty($cleanGstin)) {
-                        $missingCount++;
-                        continue;
-                    }
+        try {
+            // Execute the raw SQL
+            DB::statement($query);
+            
+            // Optional: Count how many are left (for verification)
+            $remaining = DB::table('rcmc_receipts')
+                ->where(function($q) { $q->whereNull('iec')->orWhere('iec', ''); })
+                ->whereNotNull('gstin')
+                ->count();
 
-                    // 3. Search: Find matching Director
-                    $director = RcmcDirector::where('gstin', $cleanGstin)
-                        ->whereNotNull('iec')
-                        ->where('iec', '!=', '')
-                        ->select('iec')
-                        ->first();
+            Log::info("UpdateReceiptsIec Job Completed. Remaining broken rows: {$remaining}");
 
-                    if ($director) {
-                        // 4. Update: Fill the IEC
-                        $receipt->update(['iec' => $director->iec]);
-                        $updatedCount++;
-                    } else {
-                        $missingCount++;
-                    }
-                }
-            });
+            if ($this->adminUserId) {
+                Notification::make()
+                    ->title('Bulk Update Complete')
+                    ->body("Process finished. Remaining unmatched receipts: {$remaining}")
+                    ->status('success')
+                    ->sendToDatabase(User::find($this->adminUserId));
+            }
 
-        Log::info("UpdateReceiptsIec Job Completed. Updated: {$updatedCount}, Unmatched: {$missingCount}");
-
-        if ($this->adminUserId) {
-            Notification::make()
-                ->title('Receipts Mapped to IEC')
-                ->body("Success: {$updatedCount} receipts updated. {$missingCount} could not be matched.")
-                ->status($missingCount > 0 ? 'warning' : 'success')
-                ->sendToDatabase(User::find($this->adminUserId));
+        } catch (\Exception $e) {
+            Log::error("Critical SQL Error in UpdateReceiptsIec: " . $e->getMessage());
         }
     }
 }

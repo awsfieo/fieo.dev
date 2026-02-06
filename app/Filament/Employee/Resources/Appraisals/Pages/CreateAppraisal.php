@@ -26,7 +26,7 @@ class CreateAppraisal extends CreateRecord
         $existingAppraisal = Appraisal::query()
             ->where('employee_id', $employee?->id)
             ->where('appraisal_year', $currentYear)
-            ->where('appraisal_cycle', $currentCycle)
+            ->where('appraisal_month', $currentCycle)
             ->first();
 
         if ($existingAppraisal) {

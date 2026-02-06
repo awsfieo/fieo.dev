@@ -24,6 +24,7 @@ class Employee extends Model
         'department_id',
         'office_id',
         'status',
+        'appraisal_month',
         'basic',
         'supervisor_code',
         'manager_code',

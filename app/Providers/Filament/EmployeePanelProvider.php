@@ -35,6 +35,7 @@ class EmployeePanelProvider extends PanelProvider
             ->spa()
             ->spa(hasPrefetching: true)
             ->unsavedChangesAlerts()
+            ->sidebarCollapsibleOnDesktop()
             ->discoverResources(in: app_path('Filament/Employee/Resources'), for: 'App\Filament\Employee\Resources')
             ->discoverPages(in: app_path('Filament/Employee/Pages'), for: 'App\Filament\Employee\Pages')
             ->pages([

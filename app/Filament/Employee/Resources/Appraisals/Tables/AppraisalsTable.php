@@ -30,14 +30,21 @@ class AppraisalsTable
                     ->label('Designation')
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                TextColumn::make('appraisal_year')->label('Appraisal Year'),
-                TextColumn::make('appraisal_cycle')->label('Appraisal Month'),
+                TextColumn::make('appraisal_year')
+                    ->label('Appraisal Year'),
+                TextColumn::make('appraisal_month')
+                    ->label('Appraisal Month')
+                    ->badge(fn($record) => $record->appraisal_month === 'April' ? 'success' : 'primary') // Color code months for quick visual
+                    ->searchable()
+                    ->sortable(),
 
                 TextColumn::make('status')
                     ->label('Current Status')
                     ->badge()
                     ->formatStateUsing(fn(?string $state): string => ucfirst(str_replace('_', ' ', $state ?? 'draft')))
-                    ->color(fn($record) => $record->status_color),
+                    ->color(fn($record) => $record->status_color)
+                    ->searchable()
+                    ->sortable(),
 
                 // TextColumn::make('pendingWith.name')
                 //     ->label('Pending With')

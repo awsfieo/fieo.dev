@@ -8,6 +8,8 @@ use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Contracts\Support\Htmlable;
+use App\Models\Appraisal;
 
 class EditAppraisal extends EditRecord
 {
@@ -17,24 +19,72 @@ class EditAppraisal extends EditRecord
     {
         return [
             Actions\ViewAction::make(),
-            
+
             // ACTION 1: Submit Common Assessment (Part B)
             // Visible for Regional Head (when acting as RO) or Chapter Head
             Actions\Action::make('submit_assessment')
                 ->label('Submit Assessment')
-                ->color('success')
+                ->color('warning')
                 ->icon('heroicon-m-check-circle')
-                ->visible(fn ($record) => 
-                    $record->status === 'submitted' && 
-                    $record->pending_with === Auth::user()->employee?->employee_code
+                ->visible(
+                    fn($record) =>
+                    $record->status === 'submitted' &&
+                        $record->pending_with === Auth::user()->employee?->employee_code
                     // REMOVED: !empty check. We rely on form validation instead.
                 )
                 ->requiresConfirmation()
                 ->modalHeading('Submit Evaluation')
-                ->modalDescription('This will finalize your evaluation and forward the appraisal.')
+                ->modalDescription('This will finalise your evaluation and forward the appraisal.')
                 ->action(function (AppraisalWorkflow $workflow) {
                     $this->save(); // Validation happens here
-                    $workflow->assess($this->getRecord()); 
+
+                    $record = $this->getRecord();
+                    $ratings = $record->evaluation_form_data['ratings'] ?? [];
+
+                    // 2. Calculate the Average (Same logic as Form/Infolist)
+                    $keys = [
+                        'knowledge',
+                        'verbal_skills',
+                        'written_skills',
+                        'computer_skills',
+                        'teamwork',
+                        'discipline',
+                        // 'relationships',
+                        'obedience',
+                        'planning',
+                        'responsibility',
+                        'adaptability',
+                        // 'leadership'
+                    ];
+
+                    $sum = 0;
+                    $count = 0;
+
+                    foreach ($keys as $key) {
+                        if (isset($ratings[$key]) && is_numeric($ratings[$key])) {
+                            $sum += $ratings[$key];
+                            $count++;
+                        }
+                    }
+
+                    $average = $count > 0 ? ($sum / $count) : 0;
+
+                    // 3. Validate the Average
+                    if ($average < 3) {
+                        Notification::make()
+                            ->title('Cannot Submit Assessment')
+                            ->body("The average competency score is " . number_format($average, 2) . ". It must be at least 3.0 to submit.")
+                            ->danger()
+                            ->persistent()
+                            ->send();
+
+                        $this->halt(); // <--- This stops the action here
+                        return;
+                    }
+
+                    // 4. Proceed if validation passes
+
+                    $workflow->assess($this->getRecord());
                     Notification::make()->title('Assessment Submitted')->success()->send();
                     $this->redirect($this->getResource()::getUrl('index'));
                 }),
@@ -42,24 +92,57 @@ class EditAppraisal extends EditRecord
             // ACTION 2: Submit Regional Review (Part C)
             // Visible ONLY for Regional Head when reviewing Chapter Employees
             Actions\Action::make('submit_regional_review')
-                ->label('Submit Regional Review')
-                ->color('success')
+                ->label('Submit Regional Head Review')
+                ->color('warning')
                 ->icon('heroicon-m-check-badge')
-                ->visible(fn ($record) => 
-                    $record->status === 'regional_head_review_pending' && 
-                    $record->pending_with === Auth::user()->employee?->employee_code
+                ->visible(
+                    fn($record) =>
+                    $record->status === 'regional_head_review_pending' &&
+                        $record->pending_with === Auth::user()->employee?->employee_code
                     // REMOVED: filled() check. Button is now always visible at this stage.
                 )
                 ->requiresConfirmation()
-                ->modalHeading('Submit Regional Review')
-                ->modalDescription('This will finalize your review and forward the application to the DG & CEO.')
+                ->modalHeading('Submit Regional Head Review')
+                ->modalDescription('This will finalise your review and forward the appraisal to the DG & CEO')
                 ->action(function (AppraisalWorkflow $workflow) {
-                    $this->save(); 
-                    $workflow->reviewRegional($this->getRecord()); 
-                    Notification::make()->title('Regional Review Submitted')->success()->send();
+                    $this->save();
+                    $workflow->reviewRegional($this->getRecord());
+                    Notification::make()->title('Regional Head Review Submitted')->success()->send();
+                    $this->redirect($this->getResource()::getUrl('index'));
+                }),
+
+            // --- 3. ADD THIS: Submit Final Review (Part D) ---
+            Actions\Action::make('submit_final_review')
+                ->label('Complete the Appraisal')
+                ->color('success')
+                ->icon('heroicon-m-check-badge')
+                // Visible only if status is 'final_assessment_pending' and user is DG
+                ->visible(
+                    fn($record) =>
+                    $record->status === 'final_assessment_pending' &&
+                        Auth::user()->hasRole('DG & CEO')
+                )
+                ->requiresConfirmation()
+                ->modalHeading('Complete the Appraisal?')
+                ->modalDescription('This will close the appraisal process and mark it as completed. This action cannot be undone.')
+                ->action(function (AppraisalWorkflow $workflow) {
+                    // 1. Save the form data first
+                    $this->save();
+
+                    // 2. Trigger the workflow
+                    $workflow->finalize($this->getRecord());
+
+                    // 3. Notify and Redirect
+                    Notification::make()->title('Appraisal Completed')->success()->send();
                     $this->redirect($this->getResource()::getUrl('index'));
                 }),
         ];
+    }
+
+    public function getTitle(): string | Htmlable
+    {
+        // Uses the relationship to get the real name
+        return $this->getRecord()->employee->name ?? 'Edit Appraisal';
     }
 
     protected function getFormActions(): array
@@ -72,9 +155,17 @@ class EditAppraisal extends EditRecord
         ];
     }
 
+    protected function afterSave(): void
+    {
+        // Refresh the record to ensure the latest data is ready for the redirect
+        $this->getRecord()->refresh();
+    }
+
     protected function getRedirectUrl(): string
     {
-        // Keeps user on the page after saving draft so they can hit Submit
-        return $this->getResource()::getUrl('edit', ['record' => $this->getRecord()]);
+        // FIX: Append a timestamp query parameter (?t=...)
+        // This forces the browser/Livewire to load the page as fresh content
+        // instead of restoring a stale "back-cache" version.
+        return $this->getResource()::getUrl('view', ['record' => $this->getRecord()]) . '?t=' . time();
     }
 }

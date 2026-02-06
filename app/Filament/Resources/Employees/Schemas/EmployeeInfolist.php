@@ -40,7 +40,7 @@ class EmployeeInfolist
                     ->placeholder('-'),
                 TextEntry::make('supervisor_code')
                     ->placeholder('-'),
-                TextEntry::make('manager_code')
+                TextEntry::make('appraisal_month')
                     ->placeholder('-'),
                 TextEntry::make('approver_code')
                     ->placeholder('-'),

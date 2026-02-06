@@ -55,18 +55,19 @@ class AppraisalResource extends Resource
     {
         $user = Auth::user();
 
-        // 1. Super Admin / DG sees everything
-        if ($user->hasRole(['Super Admin', 'DG & CEO'])) {
+        // 1. Only Super Admin sees everything (for debugging)
+        // REMOVED 'DG & CEO' from here so they fall through to the filter below
+        if ($user->hasRole('Super Admin')) {
             return parent::getEloquentQuery();
         }
 
-        // 2. Employees see:
-        //    a) Their OWN appraisals
-        //    b) Appraisals currently PENDING WITH them (for review)
+        // 2. Everyone else (Employees AND DG & CEO) sees:
+        //    a) Their OWN appraisals (Creator)
+        //    b) Appraisals currently PENDING WITH them (Reviewer)
         return parent::getEloquentQuery()
             ->where(function (Builder $query) use ($user) {
-                $query->where('employee_id', $user->employee->id)
-                    ->orWhere('pending_with', $user->employee->employee_code);
+                $query->where('employee_id', $user->employee?->id)
+                    ->orWhere('pending_with', $user->employee?->employee_code);
             });
     }
 

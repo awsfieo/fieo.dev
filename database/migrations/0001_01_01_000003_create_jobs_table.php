@@ -19,6 +19,9 @@ return new class extends Migration
             $table->unsignedInteger('reserved_at')->nullable();
             $table->unsignedInteger('available_at');
             $table->unsignedInteger('created_at');
+
+            // Add this compound index for high-speed worker polling
+            $table->index(['queue', 'reserved_at', 'available_at'], 'jobs_queue_reserved_available_index');
         });
 
         Schema::create('job_batches', function (Blueprint $table) {
@@ -31,7 +34,7 @@ return new class extends Migration
             $table->mediumText('options')->nullable();
             $table->integer('cancelled_at')->nullable();
             $table->integer('created_at');
-            $table->integer('finished_at')->nullable();
+            $table->integer('finished_at')->nullable()->index();
         });
 
         Schema::create('failed_jobs', function (Blueprint $table) {
