@@ -34,12 +34,6 @@ return new class extends Migration
             $table->string('pending_with', 64)->nullable()->index();
             $table->foreign('pending_with')->references('employee_code')->on('employees')->nullOnDelete();
             
-            // --- Dates & Extensions ---
-            $table->date('appraisal_start_date')->nullable();
-            $table->date('appraisal_end_date')->nullable();
-            $table->date('deadline_extension')->nullable();
-            $table->json('emp_granted_deadline_extension')->nullable();
-
             // --- DATA COLUMNS (Encrypted) ---
             $table->longText('appraisal_form_data')->nullable(); 
             $table->longText('evaluation_form_data')->nullable();

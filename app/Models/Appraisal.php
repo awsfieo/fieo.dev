@@ -17,10 +17,6 @@ class Appraisal extends Model
         'final_assessment_data'         => 'encrypted:array',
         'final_increment'               => 'encrypted',
         'file_history'                  => 'array',
-        'deadline_extension'            => 'date',
-        'appraisal_start_date'          => 'date',
-        'appraisal_end_date'            => 'date',
-        'emp_granted_deadline_extension' => 'array',
         'is_released'                   => 'boolean',
         'basic'                         => 'decimal:2',
     ];

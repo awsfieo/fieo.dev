@@ -9,6 +9,7 @@ use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Illuminate\Support\Facades\Auth;
 
 class EmployeeAppraisalsTable
 {
@@ -31,53 +32,62 @@ class EmployeeAppraisalsTable
 
                 TextColumn::make('appraisal_month')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->sortable()
+                    ->color(fn(string $state): string => match ($state) {
                         'April' => 'info',
                         'October' => 'warning',
                         default => 'gray',
                     }),
-
-                IconColumn::make('increment_granted')
-                    ->boolean()
-                    ->label('Approved')
-                    ->alignCenter(),
-
-                TextColumn::make('increment_percentage')
-                    ->badge()
-                    ->color('success')
-                    ->label('Increment'),
-
                 TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->sortable()
+                    ->color(fn(string $state): string => match ($state) {
                         'Pending' => 'danger',
                         'Processed' => 'success',
                         'Hold' => 'warning',
                         default => 'gray',
                     }),
-                
+                IconColumn::make('increment_granted')
+                    ->boolean()
+                    ->label('Increment Granted')
+                    ->alignCenter()
+                    ->sortable(),
+
+                TextColumn::make('increment_percentage')
+                    ->label('Increment %')
+                    ->badge()
+                    ->formatStateUsing(function ($state, $record) {
+                        // Logic: If user is HOD Personnel AND status is NOT Released, show 'TBD'
+                        if (Auth::user()->hasRole('HOD Personnel') && $record->status !== 'Released') {
+                            return 'TBD';
+                        }
+                        return $state;
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'TBD' => 'gray',
+                        default => 'success',
+                    }),
                 TextColumn::make('updated_at')
                     ->dateTime()
+                    ->sortable()
                     ->label('Last Updated')
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->defaultSort('created_at', 'desc')
+            ->defaultSort('name', 'asc')
             ->filters([
                 SelectFilter::make('status')
                     ->options([
                         'Pending' => 'Pending',
                         'Processed' => 'Processed',
                         'Hold' => 'Hold',
+                        'Released' => 'Released',
                     ]),
                 SelectFilter::make('appraisal_year')
-                    ->label('Year'),
+                    ->label('Appraisal Year'),
                 SelectFilter::make('appraisal_month')
-                    ->label('Cycle')
+                    ->label('Appraisal Month')
                     ->options(['April' => 'April', 'October' => 'October']),
-          
-            ])
-            ->filters([
-                //
+
             ])
             ->recordActions([
                 EditAction::make(),

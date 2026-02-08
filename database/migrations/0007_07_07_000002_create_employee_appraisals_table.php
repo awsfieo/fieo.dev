@@ -23,10 +23,16 @@ return new class extends Migration
             $table->string('name');
             $table->integer('appraisal_year');
             $table->string('appraisal_month'); // Stores 'April' or 'October'
+
+            // --- Dates & Extensions ---
+            $table->date('appraisal_start_date')->nullable();
+            $table->date('appraisal_end_date')->nullable();
+           $table->boolean('deadline_extension')->default(false); // Flag
+            $table->date('deadline_extension_date')->nullable();   // The actual new date
             
             // The Outcome
             $table->boolean('increment_granted')->default(false); // Changed to boolean
-            $table->string('increment_percentage')->nullable();   // Added separate percentage col
+            $table->text('increment_percentage')->nullable(); // Added separate percentage col
             
             $table->string('status')->default('Pending');
 

@@ -20,7 +20,7 @@ class EmployeeAppraisalResource extends Resource
 {
     protected static ?string $model = EmployeeAppraisal::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSparkles;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Personnel Dept';
 
@@ -30,12 +30,14 @@ class EmployeeAppraisalResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return Auth::user()->hasAnyRole(['Super Admin', 'HoD Personnel Dept.', 'DG & CEO']);
+        return Auth::user()->hasAnyRole(['Super Admin', 'HOD Personnel', 'DG & CEO']);
     }
 
     public static function canCreate(): bool
     {
-        return Auth::user()->hasAnyRole(['Super Admin', 'HoD Personnel Dept.', 'DG & CEO']);
+        // return Auth::user()->hasAnyRole(['Super Admin', 'HOD Personnel', 'DG & CEO']);
+
+        return false; // Disable creation of new appraisal configurations through the UI
     }
 
     public static function canDelete($record): bool

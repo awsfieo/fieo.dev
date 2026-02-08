@@ -67,7 +67,8 @@ class AppraisalInfolist
                                     ->schema([
                                         TextEntry::make('timestamp')
                                             ->label('Date & Time')
-                                            ->icon('heroicon-m-calendar'),
+                                            ->icon('heroicon-m-calendar')
+                                            ->formatStateUsing(fn ($state) => $state ? \Carbon\Carbon::parse($state)->format('d M Y') : '-'),
                                         TextEntry::make('action')
                                             ->label('Action Taken')
                                             ->badge()

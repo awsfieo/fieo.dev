@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Appraisal;
 use App\Models\User;
 use App\Models\Employee;
+use App\Models\EmployeeAppraisal;
 use Illuminate\Support\Facades\Auth;
 
 class AppraisalWorkflow
@@ -84,7 +85,7 @@ class AppraisalWorkflow
     public function finalize(Appraisal $appraisal): void
     {
         $appraisal->update([
-            'status'       => 'closed',
+            'status'       => 'completed',
             'pending_with' => null,
             'file_history' => $this->appendHistory(
                 $appraisal,
@@ -93,6 +94,36 @@ class AppraisalWorkflow
                 Auth::user()->employee
             ),
         ]);
+
+        // 2. Sync Result to EmployeeAppraisal (The "Increment Order" Table)
+        $pctString = $appraisal->final_increment; // e.g. "5%" or "0%"
+
+        // Extract number from string (e.g. "5%" -> 5.0)
+        $pctValue = (float) filter_var($pctString, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+
+        // Determine if increment is granted (> 0)
+        $isGranted = $pctValue > 0;
+
+        // LOGIC CHANGE: If 0% increment, set status to 'Hold', otherwise 'Processed'
+        $hrStatus = $isGranted ? 'Processed' : 'Hold';
+
+        // --- UPDATED LOGIC START ---
+        // Fetch the model instance first so the 'encrypted' cast works on save
+        $empAppraisal = EmployeeAppraisal::query()
+            ->where('employee_code', $appraisal->employee_code)
+            ->where('appraisal_year', $appraisal->appraisal_year)
+            ->where('appraisal_month', $appraisal->appraisal_month)
+            ->first();
+
+        if ($empAppraisal) {
+            $empAppraisal->update([
+                'appraisal_id'         => $appraisal->id,
+                'increment_percentage' => $pctString, // Will now be encrypted automatically
+                'increment_granted'    => $isGranted,
+                'status'               => $hrStatus,
+                'updated_at'           => now(),
+            ]);
+        }
     }
 
     // --- HELPER LOGIC ---

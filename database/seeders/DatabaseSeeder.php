@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
             'DG & CEO',
             'HOD Finance', // Or just 'HOD' if they are in the 'Finance' Dept
             'Accounts Executive HO', // Specific: The central gatekeeper for all regions
+            'HOD Personnel', // Specific: For Employee Appraisals workflow
 
             // 2. The Generic "Worker" Roles (The system matches these by Department/Region)
             'HOD',                  // Matches any Department Head
@@ -119,7 +120,12 @@ class DatabaseSeeder extends Seeder
                     $user->assignRole('Accounts Executive HO');
                 }
 
-                // 5. Regional Head
+                // 5. HOD Personnel
+                if ($email === 'vikasmittal@fieo.org' && ! $user->hasRole('HOD Personnel')) {
+                    $user->assignRole('HOD Personnel');
+                }
+
+                // 6. Regional Head
                 $regionalHeads = [
                     'ashishjain@fieo.org',
                     'juinchoudhury@fieo.org',
@@ -130,7 +136,7 @@ class DatabaseSeeder extends Seeder
                     $user->assignRole('Regional Head');
                 }
 
-                // 6. Chapter Head
+                // 7. Chapter Head
                 $chapterHeads = [
                     'aloksrivastava@fieo.org',
                     'amitkumarbaretha@fieo.org',
@@ -149,7 +155,7 @@ class DatabaseSeeder extends Seeder
                     $user->assignRole('Chapter Head');
                 }
 
-                // 7. Accounts Executive (Regional)
+                // 8. Accounts Executive (Regional)
                 $accountsExecutives = [
                     'grprajapati@fieo.org',
                     'jayeetaroy@fieo.org',
@@ -160,7 +166,7 @@ class DatabaseSeeder extends Seeder
                     $user->assignRole('Accounts Executive');
                 }
 
-                // 8. HOD
+                // 9. HOD
                 $hods = [
                     'vikasmittal@fieo.org',
                     'dhananjay@fieo.org',

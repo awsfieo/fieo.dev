@@ -7,6 +7,8 @@ use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Get;
 
 class EmployeeAppraisalForm
 {
@@ -14,7 +16,7 @@ class EmployeeAppraisalForm
     {
         return $schema
             ->components([
-                Section::make('Increment Order Details')
+                Section::make('Appraisal Configuration')
                     ->schema([
                         TextInput::make('employee_code')
                             ->label('Employee Code')
@@ -40,6 +42,30 @@ class EmployeeAppraisalForm
                             ])
                             ->default('April'),
 
+                        DatePicker::make('appraisal_start_date')
+                            ->label('Start Date')
+                            ->native(false),
+
+                        DatePicker::make('appraisal_end_date')
+                            ->label('End Date')
+                            ->native(false),
+
+                        Toggle::make('deadline_extension')
+                            ->label('Grant Deadline Extension')
+                            ->onColor('warning')
+                            ->live(), // Ensures the date field below shows/hides instantly
+
+                        DatePicker::make('deadline_extension_date')
+                            ->label('Extended Deadline')
+                            ->native(false)
+                            ->visible(fn($get) => $get('deadline_extension')) // Only show if toggle is ON
+                            ->required(fn($get) => $get('deadline_extension')),
+                    ])
+                    ->columns(2),
+
+                // --- NEW SECTION: DATES & EXTENSIONS ---
+                Section::make('Appraisal Status')
+                    ->schema([
                         Select::make('status')
                             ->label('Appraisal Status')
                             ->disabled()
@@ -47,6 +73,7 @@ class EmployeeAppraisalForm
                             ->options([
                                 'Pending' => 'Pending',
                                 'Processed' => 'Processed',
+                                'Released' => 'Released',
                                 'Hold' => 'Hold',
                             ])
                             ->default('Pending')
@@ -69,7 +96,6 @@ class EmployeeAppraisalForm
                             ->disabled()
                             ->dehydrated(false)
                             ->extraInputAttributes(['style' => 'font-weight: 800; color: #16a34a;']),
-
 
                     ])
                     ->columns(2),

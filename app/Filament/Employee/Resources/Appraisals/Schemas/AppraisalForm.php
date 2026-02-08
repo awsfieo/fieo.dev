@@ -131,6 +131,7 @@ class AppraisalForm
                                         TextInput::make('timestamp')
                                             ->label('Date & Time')
                                             ->disabled()
+                                            ->formatStateUsing(fn ($state) => $state ? \Carbon\Carbon::parse($state)->format('d M Y') : '-')
                                             ->dehydrated(false),
                                         TextInput::make('action')
                                             ->label('Action Taken')
