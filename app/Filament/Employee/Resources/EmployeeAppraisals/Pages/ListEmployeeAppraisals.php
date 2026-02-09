@@ -15,6 +15,7 @@ use Filament\Schemas\Components\Section; // <--- The Alternative
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Filament\Schemas\Schema;
 
@@ -102,10 +103,10 @@ class ListEmployeeAppraisals extends ListRecords
                                         ->description(function ($get) {
                                             $year = $get('year') ?? '...';
                                             $month = $get('month') === 'All' ? 'April & October' : $get('month');
-                                            $start = $get('start_date') ? \Carbon\Carbon::parse($get('start_date'))->format('d M Y') : '...';
-                                            $end = $get('end_date') ? \Carbon\Carbon::parse($get('end_date'))->format('d M Y') : '...';
+                                            $start = $get('start_date') ? Carbon::parse($get('start_date'))->format('d M Y') : '...';
+                                            $end = $get('end_date') ? Carbon::parse($get('end_date'))->format('d M Y') : '...';
 
-                                            return new \Illuminate\Support\HtmlString("
+                                            return new HtmlString("
                                                 <div class='text-sm text-gray-600'>
                                                     <p>Are you sure you want to enable employees to duly fill their Appraisal Form for appraisal month(s) <strong>{$month} {$year}</strong>?</p>
                                                     <ul style='list-style-type: disc; margin-left: 1.5rem; margin-top: 0.5rem; color: #d97706;'>
@@ -160,7 +161,7 @@ class ListEmployeeAppraisals extends ListRecords
                 ->icon('heroicon-m-check-badge')
                 ->color('danger')
                 // Visible ONLY to DG & CEO
-                ->visible(fn() => \Illuminate\Support\Facades\Auth::user()->hasRole('DG & CEO'))
+                ->visible(fn() => Auth::user()->hasRole('DG & CEO'))
                 ->modalHeading('Release Final Appraisal')
                 ->modalSubmitActionLabel('Confirm Action')
                 ->fillForm(fn() => ['year' => date('Y'), 'month' => 'All'])
@@ -171,7 +172,7 @@ class ListEmployeeAppraisals extends ListRecords
                         ->iconColor('warning')
                         ->compact()
                         ->schema([]) // Empty schema, using description for text
-                        ->description(new \Illuminate\Support\HtmlString("
+                        ->description(new HtmlString("
                             <div class='text-sm text-gray-600'>
                                 <p><strong>Warning:</strong> This action will <strong>LOCK</strong> the appraisal process and <strong>RELEASE</strong> the results.</p>
                                 <p class='mt-1'>Once released, <strong>HoD Personnel</strong> will be able to view the Increment Percentage granted to the Employees.</p>

@@ -61,6 +61,38 @@ class Appraisal extends Model
         });
     }
 
+    /**
+     * Centralized logic to calculate the average competency score.
+     */
+    public static function calculateCompetencyScore(array $ratings): float
+    {
+        $keys = [
+            'knowledge',
+            'verbal_skills',
+            'written_skills',
+            'computer_skills',
+            'teamwork',
+            'discipline',
+            'obedience',
+            'planning',
+            'responsibility',
+            'adaptability'
+            // 'relationships', 'leadership' // Uncomment if you enable these later
+        ];
+
+        $sum = 0;
+        $count = 0;
+
+        foreach ($keys as $key) {
+            if (isset($ratings[$key]) && is_numeric($ratings[$key])) {
+                $sum += $ratings[$key];
+                $count++;
+            }
+        }
+
+        return $count > 0 ? round($sum / $count, 2) : 0.0;
+    }
+
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);

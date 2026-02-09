@@ -493,34 +493,13 @@ class AppraisalForm
 
     protected static function calculateAverage($get): string
     {
-        $keys = [
-            'knowledge',
-            'verbal_skills',
-            'written_skills',
-            'computer_skills',
-            'teamwork',
-            'discipline',
-            // 'relationships',
-            'obedience',
-            'planning',
-            'responsibility',
-            'adaptability',
-            // 'leadership'
-        ];
+        // 1. Get the raw array of ratings from the form state
+        // The model's method knows exactly which keys to look for, so we can pass the whole array safely.
+        $ratings = $get('evaluation_form_data.ratings') ?? [];
 
-        $sum = 0;
-        $count = 0;
+        // 2. Use the centralized logic
+        $score = \App\Models\Appraisal::calculateCompetencyScore($ratings);
 
-        foreach ($keys as $key) {
-            $val = $get("evaluation_form_data.ratings.{$key}");
-            if (is_numeric($val)) {
-                $sum += $val;
-                $count++;
-            }
-        }
-
-        return $count > 0
-            ? number_format($sum / $count, 2) . ' / 10'
-            : '0.00 / 10';
+        return number_format($score, 2) . ' / 10';
     }
 }

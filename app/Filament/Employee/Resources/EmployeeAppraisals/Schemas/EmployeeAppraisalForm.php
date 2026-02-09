@@ -85,10 +85,11 @@ class EmployeeAppraisalForm
                             ->disabled()
                             ->dehydrated(false)
                             ->options([
-                                'Yes' => 'Yes',
-                                'No' => 'No',
+                                '1' => 'Yes',
+                                '0' => 'No',
                             ])
-                            ->default('No'),
+                            ->formatStateUsing(fn ($state) => (string) (int) $state)
+                            ->default('0'),
 
                         TextInput::make('increment_percentage')
                             ->label('Increment Percent')

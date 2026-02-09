@@ -36,40 +36,19 @@ class EditAppraisal extends EditRecord
                 ->modalHeading('Submit Evaluation')
                 ->modalDescription('This will finalise your evaluation and forward the appraisal.')
                 ->action(function (AppraisalWorkflow $workflow) {
-                    $this->save(); // Validation happens here
+                    $this->save(); 
 
                     $record = $this->getRecord();
+                    
+                    // --- REFACTOR START: Use Centralized Logic ---
+                    // Fetch the saved ratings (or empty array if null)
                     $ratings = $record->evaluation_form_data['ratings'] ?? [];
+                    
+                    // Calculate using the Model
+                    $average = \App\Models\Appraisal::calculateCompetencyScore($ratings);
+                    // --- REFACTOR END ---
 
-                    // 2. Calculate the Average (Same logic as Form/Infolist)
-                    $keys = [
-                        'knowledge',
-                        'verbal_skills',
-                        'written_skills',
-                        'computer_skills',
-                        'teamwork',
-                        'discipline',
-                        // 'relationships',
-                        'obedience',
-                        'planning',
-                        'responsibility',
-                        'adaptability',
-                        // 'leadership'
-                    ];
-
-                    $sum = 0;
-                    $count = 0;
-
-                    foreach ($keys as $key) {
-                        if (isset($ratings[$key]) && is_numeric($ratings[$key])) {
-                            $sum += $ratings[$key];
-                            $count++;
-                        }
-                    }
-
-                    $average = $count > 0 ? ($sum / $count) : 0;
-
-                    // 3. Validate the Average
+                    // Validate
                     if ($average < 3) {
                         Notification::make()
                             ->title('Cannot Submit Assessment')
@@ -78,11 +57,9 @@ class EditAppraisal extends EditRecord
                             ->persistent()
                             ->send();
 
-                        $this->halt(); // <--- This stops the action here
+                        $this->halt();
                         return;
                     }
-
-                    // 4. Proceed if validation passes
 
                     $workflow->assess($this->getRecord());
                     Notification::make()->title('Assessment Submitted')->success()->send();

@@ -4,6 +4,7 @@ namespace App\Filament\Employee\Resources\Appraisals\Pages;
 
 use App\Filament\Employee\Resources\Appraisals\AppraisalResource;
 use App\Models\Appraisal;
+use App\Models\EmployeeAppraisal;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
@@ -17,37 +18,18 @@ class CreateAppraisal extends CreateRecord
 
     public function mount(): void
     {
-        $employee = Auth::user()->employee;
-        
-        // Define the current period defaults (Must match your Form Schema defaults)
+        $employee = \Illuminate\Support\Facades\Auth::user()->employee;
         $currentYear = date('Y');
-        $today = Carbon::today();
        
-        // --- 1. DATE VALIDATION CHECK ---
-        $schedule = \App\Models\EmployeeAppraisal::query()
+        // 1. Get Schedule
+        $schedule = EmployeeAppraisal::query()
             ->where('employee_id', $employee?->id)
             ->where('appraisal_year', $currentYear)
             ->first();
 
-        $isOpen = false;
-        
-        if ($schedule) {
-             $start = $schedule->appraisal_start_date ? Carbon::parse($schedule->appraisal_start_date) : null;
-             $end   = $schedule->appraisal_end_date   ? Carbon::parse($schedule->appraisal_end_date)   : null;
-
-             // Check Standard
-             if ($start && $end && $today->betweenIncluded($start, $end)) {
-                 $isOpen = true;
-             }
-             // Check Extension
-             elseif ($schedule->deadline_extension && $schedule->deadline_extension_date) {
-                 if ($today->lessThanOrEqualTo($schedule->deadline_extension_date)) {
-                     $isOpen = true;
-                 }
-             }
-        }
-
-        if (! $isOpen) {
+        // 2. USE CENTRALIZED LOGIC
+        // If no schedule exists OR the window is closed -> Kick them out
+        if (! $schedule || ! $schedule->isSubmissionWindowOpen()) {
              Notification::make()
                 ->title('Appraisal Window Closed')
                 ->body('The appraisal window is currently closed for you.')
@@ -58,29 +40,24 @@ class CreateAppraisal extends CreateRecord
             return;
         }
         
-        // SIMPLIFIED CHECK: 
-        // Just check if ANY appraisal exists for this employee in this year.
-        // We don't care if it's April or October. One per year allowed.
-        $existingAppraisal = Appraisal::query()
+        // 3. Check for duplicates (Existing Logic)
+        $existingAppraisal = \App\Models\Appraisal::query()
             ->where('employee_id', $employee?->id)
             ->where('appraisal_year', $currentYear)
             ->first();
 
         if ($existingAppraisal) {
-            // 1. Notify the user
             Notification::make()
                 ->title('Appraisal Already Exists')
-                ->body("You have already created an appraisal form for the year $currentYear. Please view your existing appraisal.")
+                ->body("You have already created an appraisal form for the year $currentYear.")
                 ->warning()
                 ->persistent()
                 ->send();
 
-            // 2. Redirect to the existing record's View page
             $this->redirect($this->getResource()::getUrl('view', ['record' => $existingAppraisal]));
             return;
         }
 
-        // Proceed normally if no record exists
         parent::mount();
     }
 }
