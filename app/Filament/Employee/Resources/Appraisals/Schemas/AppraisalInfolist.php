@@ -322,10 +322,10 @@ class AppraisalInfolist
                                 // 1. Permissions Check
                                 (Auth::user()->hasAnyRole(['Regional Head', 'DG & CEO']) || $record->is_released) &&
                                     // 2. Status Check
-                                    in_array($record->status, ['regional_head_review_pending', 'final_assessment_pending', 'closed']) &&
+                                    in_array($record->status, ['regional_head_review_pending', 'final_assessment_pending', 'closed']) // &&
                                     // 3. CRITICAL FIX: Only show if the data is actually there. 
                                     // If skipped (empty), hide the section entirely.
-                                    !blank($record->regional_head_review_data)
+                                    // !blank($record->regional_head_review_data)
                             )
                             ->schema([
                                 Section::make('Regional Head Review')
