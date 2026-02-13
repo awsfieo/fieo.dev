@@ -44,7 +44,7 @@ class ListEmployeeAppraisals extends ListRecords
                     return [
                         'year' => $currentYear,
                         'month' => 'All',
-                        'start_date' => $existingConfig?->appraisal_start_date,
+                        'start_date' => $existingConfig?->appraisal_start_date ?? now(),
                         'end_date' => $existingConfig?->appraisal_end_date,
                     ];
                 })

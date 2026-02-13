@@ -59,6 +59,21 @@ class Appraisal extends Model
                 $model->application_no = "APR/{$year}/{$month}/{$empSuffix}";
             }
         });
+
+        // --- ADD THIS BLOCK IMMEDIATELY AFTER static::creating ---
+        static::created(function ($model) {
+            // Find the corresponding HR record (EmployeeAppraisal)
+            $empAppraisal = \App\Models\EmployeeAppraisal::query()
+                ->where('employee_code', $model->employee_code)
+                ->where('appraisal_year', $model->appraisal_year)
+                ->where('appraisal_month', $model->appraisal_month)
+                ->first();
+
+            // Link them together
+            if ($empAppraisal) {
+                $empAppraisal->update(['appraisal_id' => $model->id]);
+            }
+        });
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Carbon\Carbon;
 
 class EmployeeAppraisal extends Model
 {
@@ -26,7 +27,7 @@ class EmployeeAppraisal extends Model
      */
     public function isSubmissionWindowOpen(): bool
     {
-        $today = \Illuminate\Support\Carbon::today();
+        $today = Carbon::today();
 
         // 1. Check Standard Window
         // Since 'date' cast is used, these are already Carbon instances or null

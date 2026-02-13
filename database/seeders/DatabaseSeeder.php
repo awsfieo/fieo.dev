@@ -953,7 +953,7 @@ class DatabaseSeeder extends Seeder
                     'employee_id'       => $employee->id,
                     'appraisal_id'      => null, // Nullable until workflow creates one
                     'employee_code'     => $employee->employee_code,
-                    'name'              => $employee->name,
+                    'name'              => $employee->salutation ? $employee->salutation . ' ' . $employee->name : $employee->name,
                     'appraisal_year'    => $currentYear,
                     'appraisal_month'   => $month,
                     'status'            => 'Pending',

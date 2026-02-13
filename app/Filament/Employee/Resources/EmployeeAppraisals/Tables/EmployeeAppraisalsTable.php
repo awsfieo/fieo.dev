@@ -10,6 +10,8 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Support\Facades\Auth;
+use Filament\Notifications\Notification;
+use Filament\Actions\Action;
 
 class EmployeeAppraisalsTable
 {
@@ -38,6 +40,33 @@ class EmployeeAppraisalsTable
                         'October' => 'warning',
                         default => 'gray',
                     }),
+
+                // --- NEW: Workflow Status (From Related Appraisal) ---
+                TextColumn::make('appraisal.status')
+                    ->label('Form Status')
+                    ->badge()
+                    ->formatStateUsing(fn($state) => ucfirst(str_replace('_', ' ', $state ?? 'Not Started')))
+                    ->color(fn($state) => match ($state) {
+                        'draft'                        => 'gray',
+                        'submitted'                    => 'info',
+                        'evaluation_pending'           => 'warning',
+                        'regional_head_review_pending' => 'orange',
+                        'final_assessment_pending'     => 'primary',
+                        'completed', 'closed'          => 'success',
+                        default                        => 'gray',
+                    })
+                    ->sortable(),
+
+                // --- NEW: Pending With (From Related Appraisal) ---
+                TextColumn::make('appraisal_pending_with')
+                    ->label('Pending With')
+                    ->state(fn ($record) => $record->appraisal?->pendingWith 
+                        ? trim(($record->appraisal->pendingWith->salutation ?? '') . ' ' . ($record->appraisal->pendingWith->name ?? '')) 
+                        : '-')
+                    ->placeholder('-')
+                    ->limit(30)
+                    ->toggleable(),
+
                 TextColumn::make('status')
                     ->badge()
                     ->sortable()
@@ -63,7 +92,7 @@ class EmployeeAppraisalsTable
                         }
                         return $state;
                     })
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'TBD' => 'gray',
                         default => 'success',
                     }),
@@ -91,6 +120,36 @@ class EmployeeAppraisalsTable
             ])
             ->recordActions([
                 EditAction::make(),
+                // --- NEW: DG & CEO Revert Action ---
+                Action::make('revert_appraisal')
+                    ->label('Revert to Review')
+                    ->icon('heroicon-m-arrow-path')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Revert Appraisal to Final Review')
+                    ->modalDescription('This will reopen the appraisal, set the status back to "Final Assessment Pending", and assign it to you. Do you want to proceed?')
+                    ->visible(
+                        fn($record) =>
+                        Auth::user()->hasRole('DG & CEO') &&
+                            $record->appraisal &&
+                            in_array($record->appraisal->status, ['completed', 'closed'])
+                    )
+                    ->action(function ($record) {
+                        // 1. Update the related Appraisal Workflow
+                        $record->appraisal->update([
+                            'status'       => 'final_assessment_pending',
+                            'pending_with' => Auth::user()->employee?->employee_code,
+                        ]);
+
+                        // 2. Optional: Reset HR status if it was processed
+                        // $record->update(['status' => 'Pending']); 
+
+                        Notification::make()
+                            ->title('Appraisal Reverted')
+                            ->body('The appraisal has been reopened for final assessment.')
+                            ->success()
+                            ->send();
+                    }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

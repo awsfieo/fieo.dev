@@ -35,7 +35,7 @@ class AppraisalWorkflow
             'file_history' => $this->appendHistory(
                 $appraisal,
                 'Submitted',
-                'Appraisal Form submitted. Forwarded to ' . ($nextActor->name ?? 'Supervising Officer') . ', ' . ($nextActor->designation->designation ?? ''),
+                'Appraisal Form submitted for evaluation.', // Forwarded to ' . ($nextActor->name ?? 'Supervising Officer') . ', ' . ($nextActor->designation->designation ?? ''),
                 Auth::user()->employee,
                 $nextActor?->employee_code
             ),
@@ -91,7 +91,8 @@ class AppraisalWorkflow
                 $appraisal,
                 'Appraisal Completed',
                 'Final Assessment done by DG & CEO',
-                Auth::user()->employee
+                Auth::user()->employee,
+                null
             ),
         ]);
 

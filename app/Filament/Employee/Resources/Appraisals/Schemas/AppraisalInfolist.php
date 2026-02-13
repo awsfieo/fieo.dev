@@ -99,7 +99,12 @@ class AppraisalInfolist
                                             ->label('Currently Pending With')
                                             ->icon('heroicon-m-arrow-path')
                                             ->badge()
-                                            ->color('warning')
+                                            ->placeholder('Appraisal Closed')
+                                            ->formatStateUsing(fn ($record) => $record->pendingWith 
+                                                ? trim(($record->pendingWith->salutation ?? '') . ' ' . ($record->pendingWith->name ?? '')) 
+                                                : null
+                                            )
+                                            ->color(fn($state) => $state ? 'warning' : 'success')
                                             ->size('lg')
                                             ->weight('bold'),
                                     ])
@@ -203,6 +208,17 @@ class AppraisalInfolist
                                     ->schema([
                                         TextEntry::make('evaluation_form_data.agree_with_employee')
                                             ->label(self::styledLabel('1', 'Do you agree with the information submitted by the employee in the Appraisal Form?'))
+                                            ->badge()
+                                            ->icon(fn($state) => match ($state) {
+                                                'Yes' => 'heroicon-m-check',
+                                                'No' => 'heroicon-m-x-mark',
+                                                default => 'heroicon-m-question-mark',
+                                            })
+                                            ->color(fn($state) => match ($state) {
+                                                'Yes' => 'success',
+                                                'No' => 'danger',
+                                                default => 'gray',
+                                            })
                                             ->html()
                                             ->prose(),
                                         TextEntry::make('evaluation_form_data.disagreement')
@@ -322,10 +338,10 @@ class AppraisalInfolist
                                 // 1. Permissions Check
                                 (Auth::user()->hasAnyRole(['Regional Head', 'DG & CEO']) || $record->is_released) &&
                                     // 2. Status Check
-                                    in_array($record->status, ['regional_head_review_pending', 'final_assessment_pending', 'closed']) // &&
+                                    in_array($record->status, ['regional_head_review_pending', 'final_assessment_pending', 'closed']) &&
                                     // 3. CRITICAL FIX: Only show if the data is actually there. 
                                     // If skipped (empty), hide the section entirely.
-                                    // !blank($record->regional_head_review_data)
+                                    !blank($record->regional_head_review_data)
                             )
                             ->schema([
                                 Section::make('Regional Head Review')
@@ -333,6 +349,17 @@ class AppraisalInfolist
                                     ->schema([
                                         TextEntry::make('regional_head_review_data.agree_with_chapter_head')
                                             ->label(self::styledLabel('1', 'Do you agree with the assessment made by the Chapter Head?'))
+                                            ->badge()
+                                            ->icon(fn($state) => match ($state) {
+                                                'Yes' => 'heroicon-m-check',
+                                                'No' => 'heroicon-m-x-mark',
+                                                default => 'heroicon-m-question-mark',
+                                            })
+                                            ->color(fn($state) => match ($state) {
+                                                'Yes' => 'success',
+                                                'No' => 'danger',
+                                                default => 'gray',
+                                            })
                                             ->html()
                                             ->prose(),
                                         TextEntry::make('regional_head_review_data.disagreement')
@@ -351,13 +378,24 @@ class AppraisalInfolist
                         // --- PART D: Final Assessment (DG Only) ---
                         Tabs\Tab::make('Final Assessment')
                             ->icon('heroicon-m-check-badge')
-                            ->visible(fn($record) => Auth::user()->hasRole('DG & CEO'))
+                            ->visible(fn($record) => Auth::user()->hasRole('DG & CEO')) // && !blank($record->final_assessment_data))
                             ->schema([
                                 Section::make('Final Assessment')
                                     ->description('To be filled by the DG & CEO')
                                     ->schema([
                                         TextEntry::make('final_assessment_data.agree_with_evaluation')
                                             ->label(self::styledLabel('1', 'Do you agree with the assessment?'))
+                                            ->badge()
+                                            ->icon(fn($state) => match ($state) {
+                                                'Yes' => 'heroicon-m-check',
+                                                'No' => 'heroicon-m-x-mark',
+                                                default => 'heroicon-m-question-mark',
+                                            })
+                                            ->color(fn($state) => match ($state) {
+                                                'Yes' => 'success',
+                                                'No' => 'danger',
+                                                default => 'gray',
+                                            })
                                             ->html()
                                             ->prose(),
                                         TextEntry::make('final_assessment_data.disagreement')

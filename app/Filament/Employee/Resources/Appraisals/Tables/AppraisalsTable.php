@@ -7,6 +7,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Actions\ViewAction;
 use Filament\Actions\EditAction;
 use Illuminate\Support\Facades\Auth;
+use Filament\Tables\Grouping\Group;
 
 class AppraisalsTable
 {
@@ -58,6 +59,12 @@ class AppraisalsTable
                 EditAction::make()
                     // Only show the Edit button if the status is 'draft'
                     ->visible(fn($record) => $record->status === 'draft'),
-            ]);
+            ])
+            ->groups([
+                Group::make('record_type') // <--- Matches the virtual column name
+                    ->label('Category')
+                    ->collapsible(),
+            ])
+            ->defaultGroup('record_type');;
     }
 }
