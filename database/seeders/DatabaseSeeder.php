@@ -35,6 +35,21 @@ class DatabaseSeeder extends Seeder
             'Chapter Head',         // Matches any Chapter Head
             'Regional Head',        // Matches any Regional Head (NR, ER, WR, SR)
             'Accounts Executive',   // Matches any Accounts person (HO, NR, etc.)
+
+            // 3. Other users
+            'Exporter',
+            'Importer',
+            'Supplier',
+            'Embassy',
+            'EPC',
+            'Trade Chamber',
+            'Govt. Official',
+            'Bank',
+            'MoU Partner',
+            'EXIM Expert',
+            'Student',
+            'Job Aspirant',
+            'Others',
         ];
 
         foreach ($workflowRoles as $roleName) {
@@ -65,11 +80,11 @@ class DatabaseSeeder extends Seeder
         $assigned = 0;
 
         foreach ($rows as $row) {
-            if (count($row) < 3) continue;
+            if (count($row) < 4) continue;
 
-            $name     = trim($row[0]);
-            $email    = strtolower(trim($row[1]));
-            $password = trim($row[2]);
+            $name     = trim($row[1]);
+            $email    = strtolower(trim($row[2]));
+            $password = trim($row[3]);
 
             // skip header or invalid emails
             if (! filter_var($email, FILTER_VALIDATE_EMAIL)) continue;

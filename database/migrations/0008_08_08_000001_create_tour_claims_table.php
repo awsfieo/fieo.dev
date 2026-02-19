@@ -7,8 +7,12 @@ use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
+        // 1. Create tour_claims table
         Schema::create('tour_claims', function (Blueprint $table) {
             $table->id();
 
@@ -88,13 +92,82 @@ return new class extends Migration
             $table->index('pending_with');
         });
 
-        // Constraints
+        // Constraints for tour_claims
         DB::statement("ALTER TABLE tour_claims ADD CONSTRAINT tour_claims_arr_after_dep CHECK (arr_datetime >= dep_datetime)");
         DB::statement("ALTER TABLE tour_claims ADD CONSTRAINT tour_claims_advance_currency_chk CHECK (advance_currency IS NULL OR advance_currency IN ('INR','FOREIGN'))");
+
+        // 2. Create tour_claim_items table
+        Schema::create('tour_claim_items', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('tour_claim_id')->constrained('tour_claims')->cascadeOnDelete();
+
+            // rows in the claim form
+            $table->enum('line_type', [
+                'stay',
+                'da',
+                'travel',
+                'local_conveyance',
+                'registration_fee',
+                'visa_fee',
+                'insurance',
+                'misc'
+            ])->index();
+
+            $table->string('description', 512);
+            $table->date('period_from')->nullable();
+            $table->date('period_to')->nullable();
+
+            $table->string('currency', 8)->default('INR');
+            $table->decimal('exchange_rate', 12, 6)->nullable();
+            $table->decimal('amount_forex', 12, 2)->default(0);
+            $table->decimal('amount_inr', 12, 2)->default(0);
+
+            $table->json('payload_json')->nullable();
+            $table->json('uploads')->nullable();
+
+            $table->timestampsTz();
+
+            $table->index(['tour_claim_id', 'line_type']);
+        });
+
+        // 3. Create tour_claim_files table
+        Schema::create('tour_claim_files', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('tour_claim_item_id')
+                ->nullable()
+                ->constrained('tour_claim_items')
+                ->cascadeOnDelete();
+
+            $table->enum('kind', [
+                'bill',
+                'receipt',
+                'invoice',
+                'ticket',
+                'boarding_pass',
+                'passport_copy',
+                'visa_copy',
+                'insurance_policy',
+                'other'
+            ])->index();
+
+            $table->string('disk', 64)->default('public');
+            $table->text('path');
+            $table->string('original_name', 255)->nullable();
+            $table->string('mime', 127)->nullable();
+            $table->unsignedBigInteger('size')->nullable();
+
+            $table->timestampsTz();
+        });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
+        // Drop in reverse order to respect foreign key constraints
+        Schema::dropIfExists('tour_claim_files');
+        Schema::dropIfExists('tour_claim_items');
         Schema::dropIfExists('tour_claims');
     }
 };
