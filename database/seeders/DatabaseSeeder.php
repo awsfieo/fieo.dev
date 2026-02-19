@@ -43,7 +43,7 @@ class DatabaseSeeder extends Seeder
             'Embassy',
             'EPC',
             'Trade Chamber',
-            'Govt. Official',
+            'Govt Official',
             'Bank',
             'MoU Partner',
             'EXIM Expert',
