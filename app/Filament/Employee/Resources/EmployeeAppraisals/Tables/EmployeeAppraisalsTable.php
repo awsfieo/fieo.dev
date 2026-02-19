@@ -12,6 +12,11 @@ use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
 use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Illuminate\Support\Collection;
+use App\Jobs\ArchiveAppraisalsJob;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class EmployeeAppraisalsTable
 {
@@ -60,8 +65,8 @@ class EmployeeAppraisalsTable
                 // --- NEW: Pending With (From Related Appraisal) ---
                 TextColumn::make('appraisal_pending_with')
                     ->label('Pending With')
-                    ->state(fn ($record) => $record->appraisal?->pendingWith 
-                        ? trim(($record->appraisal->pendingWith->salutation ?? '') . ' ' . ($record->appraisal->pendingWith->name ?? '')) 
+                    ->state(fn($record) => $record->appraisal?->pendingWith
+                        ? trim(($record->appraisal->pendingWith->salutation ?? '') . ' ' . ($record->appraisal->pendingWith->name ?? ''))
                         : '-')
                     ->placeholder('-')
                     ->limit(30)
@@ -150,11 +155,45 @@ class EmployeeAppraisalsTable
                             ->success()
                             ->send();
                     }),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+
+                Action::make('download_archived_pdf')
+                    ->label('Download PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->visible(function ($record) {
+                        // A. Fast Checks First (Role & Status)
+                        if (!Auth::user()->hasRole('HOD Personnel') || $record->status !== 'Released') {
+                            return false;
+                        }
+
+                        // B. Reconstruct Filename Logic
+                        $year = $record->appraisal_year;
+                        $slugName = Str::slug($record->employee->name, ' ');
+                        $titleName = Str::title($slugName);
+                        $cleanName = str_replace(' ', '-', $titleName);
+                        $empCode = $record->employee->employee_code ?? 'NA';
+                        $filename = "Appraisal-{$year}-{$cleanName}-{$empCode}.pdf";
+
+                        // C. Check File Existence
+                        return file_exists(storage_path("app/appraisals-pdf/{$year}/{$filename}"));
+                    })
+                    ->action(function ($record) {
+                        // Re-calculate path for download
+                        $year = $record->appraisal_year;
+                        $slugName = Str::slug($record->employee->name, ' ');
+                        $titleName = Str::title($slugName);
+                        $cleanName = str_replace(' ', '-', $titleName);
+                        $empCode = $record->employee->employee_code ?? 'NA';
+                        $filename = "Appraisal-{$year}-{$cleanName}-{$empCode}.pdf";
+
+                        return response()->download(storage_path("app/appraisals-pdf/{$year}/{$filename}"));
+                    })
+
             ]);
+        // ->toolbarActions([
+        //     BulkActionGroup::make([
+        //         DeleteBulkAction::make(),
+        //     ]),
+        //    ]);
     }
 }

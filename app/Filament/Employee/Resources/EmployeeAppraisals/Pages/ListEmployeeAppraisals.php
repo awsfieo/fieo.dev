@@ -157,12 +157,12 @@ class ListEmployeeAppraisals extends ListRecords
 
             // --- NEW EXCLUSIVE ACTION: Release Final Appraisal ---
             Action::make('release_final_appraisal')
-                ->label('Release Final Appraisal')
+                ->label('Release the Increment')
                 ->icon('heroicon-m-check-badge')
                 ->color('danger')
                 // Visible ONLY to DG & CEO
                 ->visible(fn() => Auth::user()->hasRole('DG & CEO'))
-                ->modalHeading('Release Final Appraisal')
+                ->modalHeading('Release the Increment')
                 ->modalSubmitActionLabel('Confirm Action')
                 ->fillForm(fn() => ['year' => date('Y'), 'month' => 'All'])
                 ->schema([
@@ -174,7 +174,7 @@ class ListEmployeeAppraisals extends ListRecords
                         ->schema([]) // Empty schema, using description for text
                         ->description(new HtmlString("
                             <div class='text-sm text-gray-600'>
-                                <p><strong>Warning:</strong> This action will <strong>LOCK</strong> the appraisal process and <strong>RELEASE</strong> the results.</p>
+                                <p><strong>Warning:</strong> This action will <strong>LOCK</strong> the appraisal process and <strong>RELEASE</strong> the Increment.</p>
                                 <p class='mt-1'>Once released, <strong>HoD Personnel</strong> will be able to view the Increment Percentage granted to the Employees.</p>
                             </div>
                         ")),
@@ -244,6 +244,89 @@ class ListEmployeeAppraisals extends ListRecords
                     }
                 }),
 
+
+                // Inside getHeaderActions() ...
+
+            // --- NEW ACTION: Save Forms to PDF (HOD Personnel Only) ---
+            Action::make('save_pdfs')
+                ->label('Save Forms to PDF')
+                ->icon('heroicon-m-document-arrow-down')
+                ->color('warning')
+                // 1. VISIBILITY: Only for HOD Personnel
+                ->visible(fn() => Auth::user()->hasRole('HOD Personnel'))
+                ->modalHeading('Generate Appraisal PDFs')
+                ->modalDescription('This will generate PDF copies for all RELEASED and COMPLETED appraisals for the selected period and save them to the server.')
+                ->modalSubmitActionLabel('Start Generation')
+                
+                // 2. FORM: Select Year & Month
+                ->schema([
+                    Grid::make(2)
+                        ->schema([
+                            TextInput::make('year')
+                                ->label('Appraisal Year')
+                                ->numeric()
+                                ->required()
+                                ->default(date('Y')),
+
+                            Select::make('month')
+                                ->label('Appraisal Month')
+                                ->options([
+                                    'All'     => 'All (April & October)',
+                                    'April'   => 'April',
+                                    'October' => 'October',
+                                ])
+                                ->default('All')
+                                ->required(),
+                        ])
+                ])
+
+                // 3. ACTION LOGIC
+                ->action(function (array $data) {
+                    
+                    // A. Build the Query
+                    $query = EmployeeAppraisal::query()
+                        ->where('appraisal_year', $data['year'])
+                        // CONSTRAINT 1: Status must be 'Released'
+                        ->where('status', 'Released') 
+                        // CONSTRAINT 2: Form Status (linked appraisal) must be 'completed' or 'closed'
+                        ->whereHas('appraisal', function ($q) {
+                            $q->whereIn('status', ['completed', 'closed']);
+                        });
+
+                    // Handle Month Filter
+                    if ($data['month'] !== 'All') {
+                        $query->where('appraisal_month', $data['month']);
+                    }
+
+                    // B. Get IDs
+                    $appraisalIds = $query->pluck('appraisal_id')
+                        ->filter()
+                        ->unique()
+                        ->toArray();
+
+                    // C. Validate
+                    if (empty($appraisalIds)) {
+                        Notification::make()
+                            ->title('No Records Found')
+                            ->body('No released and completed appraisals found for the selected criteria.')
+                            ->warning()
+                            ->send();
+                        return;
+                    }
+
+                    // D. Dispatch Job
+                    // We reuse the existing job because "Archiving" and "Saving to PDF" are the same technical process
+                    \App\Jobs\ArchiveAppraisalsPdf::dispatch(
+                        $appraisalIds,
+                        Auth::user()
+                    );
+
+                    Notification::make()
+                        ->title('PDF Generation Started')
+                        ->body("Found " . count($appraisalIds) . " records. The files are being generated in the background.")
+                        ->success()
+                        ->send();
+                }),
             // CreateAction::make(),
         ];
     }

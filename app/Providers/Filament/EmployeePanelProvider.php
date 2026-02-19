@@ -46,6 +46,7 @@ class EmployeePanelProvider extends PanelProvider
                 AccountWidget::class,
                 // FilamentInfoWidget::class,
             ])
+            ->databaseNotifications()
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

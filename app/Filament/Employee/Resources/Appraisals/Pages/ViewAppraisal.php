@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\Support\Htmlable;
 use App\Models\Appraisal;
+use Filament\Actions\Action;
+use Illuminate\Support\Str;
+use Spatie\LaravelPdf\Facades\Pdf;
 
 
 class ViewAppraisal extends ViewRecord
@@ -46,7 +49,7 @@ class ViewAppraisal extends ViewRecord
                 ->requiresConfirmation()
                 ->modalHeading('Submit Appraisal?')
                 ->modalDescription('Only one appraisal form can be submitted in a year. After the Appraisal Form is submitted, it will be locked and cannot be edited or recalled back. 
-                Therefore, ensure that all information provided is accurate and complete before proceeding.') 
+                Therefore, ensure that all information provided is accurate and complete before proceeding.')
                 ->action(function (AppraisalWorkflow $workflow) {
                     $workflow->submit($this->getRecord());
                     Notification::make()->title('Appraisal Submitted Successfully')->success()->send();
@@ -93,7 +96,15 @@ class ViewAppraisal extends ViewRecord
                         Auth::user()->hasRole('DG & CEO')
                 )
                 ->url(fn($record) => $this->getResource()::getUrl('edit', ['record' => $record]) . '?tab=final-assessment'),
-            
+
+            Actions\Action::make('download_self_appraisal')
+                ->label('Download Form')
+                ->icon('heroicon-m-document-arrow-down')
+                ->color('dark')
+                ->visible(fn($record) => in_array($record->status, ['submitted', 'regional_head_review_pending', 'final_assessment_pending', 'completed']) && $record->employee_id === Auth::user()->employee?->id)
+                ->url(fn($record) => route('employee.appraisals.pdf', ['appraisal' => $record]), shouldOpenInNewTab: true),
+
+
         ];
     }
 }
