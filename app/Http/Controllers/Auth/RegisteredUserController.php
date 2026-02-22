@@ -30,10 +30,41 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        // Public self-registration roles only (NOT internal roles)
+        $allowedRoles = [
+            'Exporter',
+            'Importer',
+            'Supplier',
+            'Embassy',
+            'EPC',
+            'Trade Chamber',
+            'Govt Official',
+            'Bank',
+            'MoU Partner',
+            'EXIM Expert',
+            'Student',
+            'Job Aspirant',
+            'Others',
+        ];
+
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'email' => [
+                'required',
+                'string',
+                'lowercase',
+                'email',
+                'max:255',
+                'unique:' . User::class,
+                // Block @fieo.org registrations
+                function ($attribute, $value, $fail) {
+                    if (str_ends_with(strtolower($value), '@fieo.org')) {
+                        $fail('Registration using @fieo.org email addresses is not permitted.');
+                    }
+                },
+            ],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'register_as' => ['required', 'string', 'in:' . implode(',', $allowedRoles)],
         ]);
 
         $user = User::create([
@@ -41,6 +72,9 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
+
+        // Assign selected Spatie role (secure allow-list enforced above)
+        $user->assignRole($request->register_as);
 
         event(new Registered($user));
 

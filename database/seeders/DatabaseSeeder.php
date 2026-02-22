@@ -195,6 +195,48 @@ class DatabaseSeeder extends Seeder
                 if (in_array($email, $hods) && ! $user->hasRole('HOD')) {
                     $user->assignRole('HOD');
                 }
+
+                // 10. Public / External Role Mapping
+
+                $externalRoleMap = [
+                    // Exporter
+                    'exporter-indian@exporter.com'   => 'Exporter',
+                    'exporter-foreign@exporter.com'  => 'Exporter',
+
+                    // Importer
+                    'importer-indian@importer.com'   => 'Importer',
+                    'importer-foreign@importer.com'  => 'Importer',
+
+                    // Supplier
+                    'supplier-indian@supplier.com'   => 'Supplier',
+                    'supplier-foreign@supplier.com'  => 'Supplier',
+
+                    // Embassy
+                    'embassy-indian@embassy.com'     => 'Embassy',
+                    'embassy-foreign@embassy.com'    => 'Embassy',
+
+                    // Trade Chamber
+                    'chamber-indian@chamber.com'     => 'Trade Chamber',
+                    'chamber-foreign@chamber.com'    => 'Trade Chamber',
+
+                    // Single role emails
+                    'epc@epc.com'                    => 'EPC',
+                    'govt-official@govt.com'         => 'Govt Official',
+                    'bank@bank.com'                  => 'Bank',
+                    'partner@partner.com'            => 'MoU Partner',
+                    'expert@expert.com'              => 'EXIM Expert',
+                    'student@student.com'            => 'Student',
+                    'jobaspirant@career.com'         => 'Job Aspirant',
+                    'others@others.com'              => 'Others',
+                ];
+
+                if (array_key_exists($email, $externalRoleMap)) {
+                    $roleName = $externalRoleMap[$email];
+
+                    if (! $user->hasRole($roleName)) {
+                        $user->assignRole($roleName);
+                    }
+                }
             }
         }
 

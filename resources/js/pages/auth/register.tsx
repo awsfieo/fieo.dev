@@ -10,6 +10,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
 
+const registerAsOptions = [
+    'Exporter',
+    'Importer',
+    'Supplier',
+    'Embassy',
+    'EPC',
+    'Trade Chamber',
+    'Govt Official',
+    'Bank',
+    'MoU Partner',
+    'EXIM Expert',
+    'Student',
+    'Job Aspirant',
+    'Others',
+] as const;
+
 export default function Register() {
     return (
         <AuthLayout
@@ -25,6 +41,28 @@ export default function Register() {
             >
                 {({ processing, errors }) => (
                     <>
+                        <div className="grid gap-2">
+                            <Label htmlFor="register_as">Register as</Label>
+                            <select
+                                id="register_as"
+                                name="register_as"
+                                required
+                                tabIndex={2}
+                                defaultValue=""
+                                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+                            >
+                                <option value="" disabled>
+                                    Select
+                                </option>
+                                {registerAsOptions.map((opt) => (
+                                    <option key={opt} value={opt}>
+                                        {opt}
+                                    </option>
+                                ))}
+                            </select>
+                            <InputError message={errors.register_as} />
+                        </div>
+
                         <div className="grid gap-6">
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Name</Label>

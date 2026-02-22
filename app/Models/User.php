@@ -69,6 +69,21 @@ class User extends Authenticatable implements FilamentUser
                 && $this->hasRole('Employee')
                 && str_ends_with($this->email, '@fieo.org'),
 
+            // Public / external role panels
+            'exporter' => $this->hasRole('Exporter'),
+            'importer' => $this->hasRole('Importer'),
+            'supplier' => $this->hasRole('Supplier'),
+            'embassy' => $this->hasRole('Embassy'),
+            'epc' => $this->hasRole('EPC'),
+            'chamber' => $this->hasRole('Trade Chamber'),
+            'govt-official' => $this->hasRole('Govt Official'),
+            'bank' => $this->hasRole('Bank'),
+            'partner' => $this->hasRole('MoU Partner'),
+            'expert' => $this->hasRole('EXIM Expert'),
+            'student' => $this->hasRole('Student'),
+            'job' => $this->hasRole('Job Aspirant'),
+            'others' => $this->hasRole('Others'),
+
             default => false,
         };
     }

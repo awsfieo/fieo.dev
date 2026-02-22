@@ -15,14 +15,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function () {
         $user = Auth::user();
 
-        if ($user && $user->hasRole('Employee')) {
-            // If request came from Inertia (XHR), force full page navigation
-            if (request()->header('X-Inertia')) {
-                return Inertia::location('/employee');
-            }
+        // Role → Filament panel path
+        $rolePanelMap = [
+            'Employee'      => '/employee',
+            'Exporter'      => '/exporter',
+            'Importer'      => '/importer',
+            'Supplier'      => '/supplier',
+            'Embassy'       => '/embassy',
+            'EPC'           => '/epc',
+            'Trade Chamber' => '/chamber',
+            'Govt Official' => '/govt-official',
+            'Bank'          => '/bank',
+            'MoU Partner'   => '/partner',
+            'EXIM Expert'   => '/expert',
+            'Student'       => '/student',
+            'Job Aspirant'  => '/job',
+            'Others'        => '/others',
+        ];
 
-            // Normal browser request
-            return redirect('/employee');
+        if ($user) {
+            foreach ($rolePanelMap as $role => $path) {
+                if ($user->hasRole($role)) {
+                    // If request came from Inertia (XHR), force full page navigation
+                    if (request()->header('X-Inertia')) {
+                        return Inertia::location($path);
+                    }
+
+                    // Normal browser request
+                    return redirect($path);
+                }
+            }
         }
 
         return Inertia::render('dashboard');
@@ -36,17 +58,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/settings/{any?}', function () {
         $user = Auth::user();
 
-        if ($user && $user->hasRole('Employee')) {
-            // Inertia request: force full page load to Filament
-            if (request()->header('X-Inertia')) {
-                return Inertia::location('/employee');
-            }
+        // Role → Filament panel path (Filament users don't use Inertia settings)
+        $rolePanelMap = [
+            'Employee'      => '/employee',
+            'Exporter'      => '/exporter',
+            'Importer'      => '/importer',
+            'Supplier'      => '/supplier',
+            'Embassy'       => '/embassy',
+            'EPC'           => '/epc',
+            'Trade Chamber' => '/chamber',
+            'Govt Official' => '/govt-official',
+            'Bank'          => '/bank',
+            'MoU Partner'   => '/partner',
+            'EXIM Expert'   => '/expert',
+            'Student'       => '/student',
+            'Job Aspirant'  => '/job',
+            'Others'        => '/others',
+        ];
 
-            return redirect('/employee');
+        if ($user) {
+            foreach ($rolePanelMap as $role => $path) {
+                if ($user->hasRole($role)) {
+                    if (request()->header('X-Inertia')) {
+                        return Inertia::location($path);
+                    }
+
+                    return redirect($path);
+                }
+            }
         }
 
-        // If not employee, send them to the normal settings landing (adjust as needed)
-        // Option 1: redirect to your profile settings page
         return redirect('/settings/profile');
     })
         ->where('any', '.*')
