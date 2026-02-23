@@ -154,7 +154,7 @@ export default function Welcome() {
                             </Link>
                         ) : (
                             <>
-                                <a
+                                {/* <a
                                     href="/admin"
                                     className={[
                                         'hidden rounded-full px-3 py-1 text-xs transition-colors duration-200 md:inline-block',
@@ -175,7 +175,7 @@ export default function Welcome() {
                                     ].join(' ')}
                                 >
                                     Employee panel
-                                </a>
+                                </a> */}
                                 <Link href={login()}>
                                     <Button
                                         size="sm"

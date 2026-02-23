@@ -38,7 +38,7 @@ class EmbassyPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Embassy/Widgets'), for: 'App\Filament\Embassy\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
+                // FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -53,6 +53,7 @@ class EmbassyPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->brandName('Embassy and Consulates');
     }
 }

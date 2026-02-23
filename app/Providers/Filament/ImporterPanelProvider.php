@@ -38,7 +38,7 @@ class ImporterPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Importer/Widgets'), for: 'App\Filament\Importer\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
+                // FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -53,6 +53,7 @@ class ImporterPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->brandName('Importer');
     }
 }

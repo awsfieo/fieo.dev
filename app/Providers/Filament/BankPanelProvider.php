@@ -38,7 +38,7 @@ class BankPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Bank/Widgets'), for: 'App\Filament\Bank\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
+                // FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -53,6 +53,7 @@ class BankPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->brandName('Bank');
     }
 }

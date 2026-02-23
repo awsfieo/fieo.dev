@@ -38,7 +38,7 @@ class ExporterPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Exporter/Widgets'), for: 'App\Filament\Exporter\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
+                // FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -53,6 +53,7 @@ class ExporterPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->brandName('Exporter');
     }
 }

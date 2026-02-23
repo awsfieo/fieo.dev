@@ -38,7 +38,7 @@ class ExpertPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Expert/Widgets'), for: 'App\Filament\Expert\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
+                // FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -53,6 +53,7 @@ class ExpertPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->brandName('EXIM Expert');
     }
 }

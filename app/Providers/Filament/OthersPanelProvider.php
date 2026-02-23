@@ -38,7 +38,7 @@ class OthersPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Others/Widgets'), for: 'App\Filament\Others\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
+                // FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -53,6 +53,7 @@ class OthersPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->brandName('Others');
     }
 }

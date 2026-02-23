@@ -38,7 +38,7 @@ class GovtOfficialPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/GovtOfficial/Widgets'), for: 'App\Filament\GovtOfficial\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
+                // FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -53,6 +53,7 @@ class GovtOfficialPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->brandName('Govt Official');
     }
 }

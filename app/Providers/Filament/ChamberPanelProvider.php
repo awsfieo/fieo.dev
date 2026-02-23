@@ -38,7 +38,7 @@ class ChamberPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Chamber/Widgets'), for: 'App\Filament\Chamber\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
+                // FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -53,6 +53,7 @@ class ChamberPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->brandName('Trade Chamber');
     }
 }

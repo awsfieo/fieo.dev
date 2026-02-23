@@ -38,7 +38,7 @@ class JobPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Job/Widgets'), for: 'App\Filament\Job\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
+                // FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -53,6 +53,7 @@ class JobPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->brandName('Job Aspirant');
     }
 }

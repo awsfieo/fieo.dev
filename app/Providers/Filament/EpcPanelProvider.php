@@ -38,7 +38,7 @@ class EpcPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Epc/Widgets'), for: 'App\Filament\Epc\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
+                // FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -53,6 +53,7 @@ class EpcPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->brandName('EPC');
     }
 }
